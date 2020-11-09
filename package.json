@@ -1,8 +1,8 @@
 {
   "name": "loose-ts-check",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Run TS type-check and ignore certain errors in some files",
+  "bin": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "type-check": "tsc --noEmit",
