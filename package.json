@@ -1,0 +1,46 @@
+{
+  "name": "loose-ts-check",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "npm run test -- --watch",
+    "lint:formatting": "prettier --check src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gelio/loose-ts-check.git"
+  },
+  "keywords": [
+    "typescript",
+    "type-check",
+    "loose",
+    "config"
+  ],
+  "author": "Grzegorz Rozdzialik <voreny.gelio@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Gelio/loose-ts-check/issues"
+  },
+  "homepage": "https://github.com/Gelio/loose-ts-check#readme",
+  "devDependencies": {
+    "@types/jest": "^26.0.15",
+    "husky": "^4.3.0",
+    "jest": "^26.6.3",
+    "lint-staged": "^10.5.1",
+    "prettier": "^2.1.2",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.0.5"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{ts,md}": "prettier --write"
+  }
+}
