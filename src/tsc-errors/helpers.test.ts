@@ -1,4 +1,5 @@
-import { parseTscErrors, TscError } from './helpers';
+import { parseTscErrors } from './parse-tsc-errors';
+import { TscError } from './types';
 
 describe('parseTscErrors', () => {
   it('should parse a basic error line', () => {
