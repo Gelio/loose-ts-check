@@ -1,32 +1,33 @@
 import { TscError } from './types';
 
+const tscErrorLineRegExp = /^(.*)\(\d+,\d+\): error (TS\d{4,}):.*$/;
+
 export const parseTscErrors = (tscOutput: string) => {
-  const tsErrorCodeRegexp = /TS\d{4,}/;
-
-  const linesWithErrors = tscOutput
+  const tscErrors: TscError[] = [];
+  const tscOutputLines = tscOutput
     .split('\n')
-    .filter((line) => tsErrorCodeRegexp.test(line));
+    .filter((line) => line.trim() !== '');
+  let lastTscError: TscError | undefined;
 
-  const errorLineRegExp = /^(?<filePath>.*)\(\d+,\d+\): error (?<tsErrorCode>TS\d{4,}):.*$/;
+  tscOutputLines.forEach((line) => {
+    const errorLineMatch = line.match(tscErrorLineRegExp);
 
-  return linesWithErrors.map(
-    (line): TscError => {
-      const errorLineMatch = line.match(errorLineRegExp);
-
-      if (!errorLineMatch) {
-        throw new Error(
-          `Line was mistakingly caught as a TS error, but it does not match the line-parsing regexp:\n${line}`,
-        );
+    if (!errorLineMatch) {
+      if (lastTscError) {
+        lastTscError.rawErrorLines.push(line);
       }
+      return;
+    }
 
-      if (!errorLineMatch.groups) {
-        throw new Error('Regexp capture groups are not supported');
-      }
+    const tscError: TscError = {
+      filePath: errorLineMatch[1],
+      tscErrorCode: errorLineMatch[2],
+      rawErrorLines: [line],
+    };
 
-      return {
-        filePath: errorLineMatch.groups.filePath,
-        tscErrorCode: errorLineMatch.groups.tsErrorCode,
-      };
-    },
-  );
+    lastTscError = tscError;
+    tscErrors.push(tscError);
+  });
+
+  return tscErrors;
 };

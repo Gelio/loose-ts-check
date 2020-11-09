@@ -12,6 +12,7 @@ describe('parseTscErrors', () => {
     expect(result).toHaveLength(1);
     expect(result[0].filePath).toBe(filePath);
     expect(result[0].tscErrorCode).toBe(tscErrorCode);
+    expect(result[0].rawErrorLines).toEqual([tscOutput]);
   });
 
   it('should parse two errors in the same file', () => {
@@ -24,15 +25,22 @@ ${filePath}(94,15): error TS2722: Cannot invoke an object which is possibly 'und
     const result = parseTscErrors(tscOutput);
 
     expect(result).toEqual([
-      {
+      expect.objectContaining({
         filePath,
         tscErrorCode: 'TS2322',
-      },
-      {
+        rawErrorLines: [
+          `${filePath}(58,17): error TS2322: Type 'Element | null' is not assignable to type 'ReactElement<any, string | ((props: any) => ReactElement<any, string | ... | (new (props: any) => Component<any, any, any>)> | null) | (new (props: any) => Component<any, any, any>)> | OverlayFunc'.`,
+          "  Type 'null' is not assignable to type 'ReactElement<any, string | ((props: any) => ReactElement<any, string | ... | (new (props: any) => Component<any, any, any>)> | null) | (new (props: any) => Component<any, any, any>)> | OverlayFunc'.",
+        ],
+      } as TscError),
+      expect.objectContaining({
         filePath,
         tscErrorCode: 'TS2722',
-      },
-    ] as TscError[]);
+        rawErrorLines: [
+          `${filePath}(94,15): error TS2722: Cannot invoke an object which is possibly 'undefined'.`,
+        ],
+      } as TscError),
+    ]);
   });
 
   it('should parse errors from various files', () => {
@@ -54,5 +62,19 @@ app/pages/site/site-tests/site-tests.tsx(33,19): error TS2322: Type 'REQUEST_STA
     const result = parseTscErrors(tscOutput);
 
     expect(result).toHaveLength(0);
+  });
+
+  it('should not add final whitespace to rawErrorLines', () => {
+    const tscOutput = `app/common/components/card/card.tsx(94,15): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+
+
+
+    `;
+
+    const result = parseTscErrors(tscOutput);
+
+    expect(result[0].rawErrorLines).toEqual([
+      "app/common/components/card/card.tsx(94,15): error TS2722: Cannot invoke an object which is possibly 'undefined'.",
+    ]);
   });
 });
