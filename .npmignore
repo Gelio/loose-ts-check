@@ -1,0 +1,8 @@
+.github
+node_modules
+src
+.editorconfig
+.gitignore
+.prettierrc
+jest.config.js
+tsconfig.*
