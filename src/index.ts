@@ -41,114 +41,124 @@ const options = yargs(process.argv)
   })
   .parse();
 
-const ignoredErrorCodesArray = readJSONArray(
-  options['ignored-error-codes'],
-  options.init,
-);
-const looselyTypeCheckedFilePathsArray = readJSONArray(
-  options['loosely-type-checked-files'],
-  options.init,
-);
+(() => {
+  const ignoredErrorCodesArray = readJSONArray(
+    options['ignored-error-codes'],
+    options.init,
+  );
+  const looselyTypeCheckedFilePathsArray = readJSONArray(
+    options['loosely-type-checked-files'],
+    options.init,
+  );
 
-if (
-  !Array.isArray(ignoredErrorCodesArray) ||
-  !Array.isArray(looselyTypeCheckedFilePathsArray)
-) {
-  if (ignoredErrorCodesArray instanceof Error) {
-    console.log(ignoredErrorCodesArray.message);
-  }
-  if (looselyTypeCheckedFilePathsArray instanceof Error) {
-    console.log(looselyTypeCheckedFilePathsArray.message);
-  }
-
-  console.log(chalk.yellow('Either fix the files or pass the --init option'));
-  process.exit(1);
-}
-
-const ignoredErrorCodes = new Set<string>(ignoredErrorCodesArray);
-
-const validationErrors = validateTscErrorCodes(ignoredErrorCodes);
-if (validationErrors.length > 0) {
-  console.log(`Invalid TSC error codes in ${options['ignored-error-codes']}`);
-  validationErrors.forEach(console.log);
-  process.exit(1);
-}
-
-const looselyTypeCheckedFilePaths = new Set<string>(
-  looselyTypeCheckedFilePathsArray,
-);
-
-getProgramInput()
-  .then((programInput) => {
-    const tscErrors = parseTscErrors(programInput);
-
-    if (tscErrors.length === 0) {
-      console.log(chalk.green('No TSC errors detected'));
-      return;
+  if (
+    !Array.isArray(ignoredErrorCodesArray) ||
+    !Array.isArray(looselyTypeCheckedFilePathsArray)
+  ) {
+    if (ignoredErrorCodesArray instanceof Error) {
+      console.log(ignoredErrorCodesArray.message);
+    }
+    if (looselyTypeCheckedFilePathsArray instanceof Error) {
+      console.log(looselyTypeCheckedFilePathsArray.message);
     }
 
-    console.log(`${chalk.red(tscErrors.length)} errors detected`);
+    console.log(chalk.yellow('Either fix the files or pass the --init option'));
+    getProgramInputAndFail();
+    return;
+  }
 
-    const filePathsWithErrors = new Set(
-      tscErrors.map((tscError) => tscError.filePath),
-    );
+  const ignoredErrorCodes = new Set<string>(ignoredErrorCodesArray);
 
-    if (options.init) {
-      initializeConfigurationFiles(filePathsWithErrors, tscErrors);
-      process.exit(0);
-    }
+  const validationErrors = validateTscErrorCodes(ignoredErrorCodes);
+  if (validationErrors.length > 0) {
+    console.log(`Invalid TSC error codes in ${options['ignored-error-codes']}`);
+    validationErrors.forEach(console.log);
+    getProgramInputAndFail();
+    return;
+  }
 
-    const {
-      ignoredTscErrors,
-      unignoredTscErrors,
-      tscErrorsThatCouldBeIgnored,
-      validTscErrors,
-    } = partitionTscErrors({
-      tscErrors,
-      ignoredErrorCodes,
-      looselyTypeCheckedFilePaths,
-    });
+  const looselyTypeCheckedFilePaths = new Set<string>(
+    looselyTypeCheckedFilePathsArray,
+  );
 
-    console.log(
-      `${chalk.yellow(ignoredTscErrors.length)} errors have been ignored`,
-    );
+  getProgramInput()
+    .then((programInput) => {
+      const tscErrors = parseTscErrors(programInput);
 
-    if (unignoredTscErrors.length > 0) {
-      console.log(
-        `${chalk.red(unignoredTscErrors.length)} errors were not ignored`,
+      if (tscErrors.length === 0) {
+        console.log(chalk.green('No TSC errors detected'));
+        return;
+      }
+
+      console.log(`${chalk.red(tscErrors.length)} errors detected`);
+
+      const filePathsWithErrors = new Set(
+        tscErrors.map((tscError) => tscError.filePath),
       );
-    }
 
-    let updateFileRegistryPossible = false;
+      if (options.init) {
+        initializeConfigurationFiles(filePathsWithErrors, tscErrors);
+        process.exit(0);
+      }
 
-    updateFileRegistryPossible = reportTscErrorsThatCouldBeIgnored(
-      tscErrorsThatCouldBeIgnored,
-      updateFileRegistryPossible,
-    );
-
-    const looselyTypeCheckedFilePathsWithoutErrors = Array.from(
-      looselyTypeCheckedFilePaths,
-    ).filter((filePath) => !filePathsWithErrors.has(filePath));
-
-    updateFileRegistryPossible = reportLooselyTypeCheckedFilePathsWithoutErrors(
-      looselyTypeCheckedFilePathsWithoutErrors,
-      updateFileRegistryPossible,
-    );
-
-    reportValidTscErrors(validTscErrors);
-
-    if (options['auto-update'] && updateFileRegistryPossible) {
-      updateLooselyTypeCheckedFilePaths(
-        looselyTypeCheckedFilePathsWithoutErrors,
+      const {
+        ignoredTscErrors,
+        unignoredTscErrors,
         tscErrorsThatCouldBeIgnored,
+        validTscErrors,
+      } = partitionTscErrors({
+        tscErrors,
+        ignoredErrorCodes,
+        looselyTypeCheckedFilePaths,
+      });
+
+      console.log(
+        `${chalk.yellow(ignoredTscErrors.length)} errors have been ignored`,
       );
-    }
-  })
-  .catch((error) => {
-    console.error('Unknown error', error);
-  });
+
+      if (unignoredTscErrors.length > 0) {
+        console.log(
+          `${chalk.red(unignoredTscErrors.length)} errors were not ignored`,
+        );
+      }
+
+      let updateFileRegistryPossible = false;
+
+      updateFileRegistryPossible = reportTscErrorsThatCouldBeIgnored(
+        tscErrorsThatCouldBeIgnored,
+        updateFileRegistryPossible,
+      );
+
+      const looselyTypeCheckedFilePathsWithoutErrors = Array.from(
+        looselyTypeCheckedFilePaths,
+      ).filter((filePath) => !filePathsWithErrors.has(filePath));
+
+      updateFileRegistryPossible = reportLooselyTypeCheckedFilePathsWithoutErrors(
+        looselyTypeCheckedFilePathsWithoutErrors,
+        updateFileRegistryPossible,
+      );
+
+      reportValidTscErrors(validTscErrors);
+
+      if (options['auto-update'] && updateFileRegistryPossible) {
+        updateLooselyTypeCheckedFilePaths(
+          looselyTypeCheckedFilePaths,
+          looselyTypeCheckedFilePathsWithoutErrors,
+          tscErrorsThatCouldBeIgnored,
+        );
+      }
+    })
+    .catch((error) => {
+      console.error('Unknown error', error);
+    });
+})();
+
+function getProgramInputAndFail() {
+  getProgramInput().then(() => process.exit(1));
+}
 
 function updateLooselyTypeCheckedFilePaths(
+  looselyTypeCheckedFilePaths: Set<string>,
   looselyTypeCheckedFilePathsWithoutErrors: any[],
   tscErrorsThatCouldBeIgnored: TscError[],
 ) {
