@@ -2,11 +2,9 @@ import { TscError } from './types';
 
 const tscErrorLineRegExp = /^(.*)\(\d+,\d+\): error (TS\d{4,}):.*$/;
 
-export const parseTscErrors = (tscOutput: string) => {
+export const parseTscErrors = (tscOutput: string[]) => {
   const tscErrors: TscError[] = [];
-  const tscOutputLines = tscOutput
-    .split('\n')
-    .filter((line) => line.trim() !== '');
+  const tscOutputLines = tscOutput.filter((line) => line.trim() !== '');
   let lastTscError: TscError | undefined;
 
   tscOutputLines.forEach((line) => {
