@@ -1,5 +1,11 @@
 # Loose TS check
 
+[![Downloads badge](https://img.shields.io/npm/dw/loose-ts-check.svg?style=flat)](https://www.npmjs.com/package/loose-ts-check)
+[![Version badge](https://img.shields.io/npm/v/loose-ts-check.svg?style=flat)](https://www.npmjs.com/package/loose-ts-check)
+[![License badge](https://img.shields.io/npm/l/loose-ts-check.svg?style=flat)](https://github.com/Gelio/loose-ts-check/blob/master/LICENSE.md)
+[![GitHub stars badge](https://img.shields.io/github/stars/Gelio/loose-ts-check.svg?style=social)](https://github.com/Gelio/loose-ts-check)
+![CI](https://github.com/Gelio/loose-ts-check/workflows/CI/badge.svg)
+
 The `loose-ts-check` utility helps ignore particular types of TS error in specified files.
 
 This is useful when migrating to a stricter `tsconfig.json` configuration incrementally, where only
