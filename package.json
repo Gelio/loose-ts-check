@@ -2,13 +2,14 @@
   "name": "loose-ts-check",
   "version": "1.0.0",
   "description": "Run TS type-check and ignore certain errors in some files",
-  "bin": "dist/index.js",
+  "bin": "bin/loose-ts-check",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "type-check": "tsc",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
-    "lint:formatting": "prettier --check src"
+    "lint:formatting": "prettier --check src",
+    "prepublish": "rm -rf dist && npm run build"
   },
   "repository": {
     "type": "git",
