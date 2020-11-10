@@ -9,7 +9,7 @@
     "test": "jest",
     "test:watch": "npm run test -- --watch",
     "lint:formatting": "prettier --check src",
-    "prepublish": "rm -rf dist && npm run build"
+    "prepare": "rm -rf dist && npm run build"
   },
   "repository": {
     "type": "git",
