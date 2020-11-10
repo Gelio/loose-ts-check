@@ -5,7 +5,7 @@
   "bin": "dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
     "lint:formatting": "prettier --check src"
