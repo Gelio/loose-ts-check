@@ -1,4 +1,5 @@
-import { partition } from 'utils';
+import { partition } from '../utils';
+
 import { TscError } from './types';
 
 export const partitionTscErrors = ({

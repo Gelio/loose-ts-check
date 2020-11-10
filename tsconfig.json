@@ -3,7 +3,6 @@
     "target": "es5",
     "module": "commonjs",
     "outDir": "./dist",
-    "baseUrl": "./src",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
