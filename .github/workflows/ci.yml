@@ -9,12 +9,15 @@ jobs:
   build:
     name: Lint, test, build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ['8', '10', '12']
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: ${{ matrix.node }}
       - run: npm ci
       - run: npm run lint:formatting
       - run: npm run type-check
