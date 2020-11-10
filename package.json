@@ -4,7 +4,7 @@
   "description": "Run TS type-check and ignore certain errors in some files",
   "bin": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
