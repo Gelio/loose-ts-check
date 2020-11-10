@@ -65,7 +65,7 @@ if (
   process.exit(1);
 }
 
-const ignoredErrorCodes = new Set(ignoredErrorCodesArray);
+const ignoredErrorCodes = new Set<string>(ignoredErrorCodesArray);
 
 const validationErrors = validateTscErrorCodes(ignoredErrorCodes);
 if (validationErrors.length > 0) {
@@ -74,7 +74,9 @@ if (validationErrors.length > 0) {
   process.exit(1);
 }
 
-const looselyTypeCheckedFilePaths = new Set(looselyTypeCheckedFilePathsArray);
+const looselyTypeCheckedFilePaths = new Set<string>(
+  looselyTypeCheckedFilePathsArray,
+);
 
 getProgramInput()
   .then((programInput) => {
@@ -111,13 +113,11 @@ getProgramInput()
       `${chalk.yellow(ignoredTscErrors.length)} errors have been ignored`,
     );
 
-    if (unignoredTscErrors.length === 0) {
-      process.exit(0);
+    if (unignoredTscErrors.length > 0) {
+      console.log(
+        `${chalk.red(unignoredTscErrors.length)} errors were not ignored`,
+      );
     }
-
-    console.log(
-      `${chalk.red(unignoredTscErrors.length)} errors were not ignored`,
-    );
 
     let updateFileRegistryPossible = false;
 
@@ -172,7 +172,9 @@ function updateLooselyTypeCheckedFilePaths(
 function reportValidTscErrors(validTscErrors: TscError[]) {
   if (validTscErrors.length > 0) {
     console.log(
-      `${chalk.red(validTscErrors.length)} errors could not be ignored`,
+      `${chalk.red(
+        validTscErrors.length,
+      )} errors could not be ignored as those codes are not in the ignored list`,
     );
 
     validTscErrors.forEach((error) =>
@@ -192,6 +194,7 @@ function reportLooselyTypeCheckedFilePathsWithoutErrors(
         looselyTypeCheckedFilePathsWithoutErrors.length,
       )} loosely type-checked files no longer have any errors and could be strictly type-checked.`,
     );
+    console.log(looselyTypeCheckedFilePathsWithoutErrors);
     updateFileRegistryPossible = true;
 
     if (!options['auto-update']) {
