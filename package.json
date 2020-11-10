@@ -22,7 +22,7 @@
     "config"
   ],
   "author": "Grzegorz Rozdzialik <voreny.gelio@gmail.com>",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Gelio/loose-ts-check/issues"
   },
