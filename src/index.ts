@@ -1,211 +1,250 @@
-// Main CLI
-import { join } from 'path';
-import { parseTscErrors } from 'tsc-errors';
-import { partition } from 'utils';
+import yargs from 'yargs';
+import chalk from 'chalk';
 
 import {
-  getLooselyTypeCheckedFilePaths,
-  saveJSONFile,
-  runTsc,
-  getOrangeText,
-} from './helpers';
+  parseTscErrors,
+  partitionTscErrors,
+  TscError,
+  validateTscErrorCodes,
+} from './tsc-errors';
+import { saveJSONArray, readJSONArray, getProgramInput } from './helpers';
 
-/**
- * The `strict-ts-check` utility helps when migrating to a stricter tsconfig.json configuration
- * incrementally.
- *
- * It does the following:
- * ```md
- * 1. Run `tsc` with a strict tsconfig to get the list of all errors (both valid and those that
- *    should be ignored)
- * 2. Parse the `tsc` errors
- * 3. Ignore the errors for files that should be loosely type-checked
- * 4. Fail if there are real errors in the project
- * 5. Check if there are files in the loosely type-checked list that can be fully type-checked (with
- *    the stricter tsconfig)
- * 6. Fail if there are such files
- *    This allows the script to be run as a guard in CI
- * 7. Optionally, if `--fix` flag is added, update the loosely type-checked files list
- * ```
- */
+const options = yargs(process.argv)
+  .options({
+    'ignored-error-codes': {
+      type: 'string',
+      description:
+        'Path to a JSON file with an array of TSC error codes that should be ignored',
+      default: 'ignored-error-codes.json',
+      normalize: true,
+    },
+    'loosely-type-checked-files': {
+      type: 'string',
+      description:
+        'Path to a JSON file with an array of file paths that should be loosely checked.' +
+        '\nSpecified errors will be ignored in those files.',
+      default: 'loosely-type-checked-files.json',
+      normalize: true,
+    },
+    init: {
+      alias: ['i'],
+      type: 'boolean',
+      description: 'Initialize the JSON files with existing TSC errors',
+      default: false,
+    },
+    'auto-update': {
+      type: 'boolean',
+      description:
+        'When specified, the files that no longer have errors will be removed from the list of loosely type-checked files',
+      default: false,
+    },
+  })
+  .parse();
 
-const looselyTypeCheckedFilesRegistryPath = './loosely-type-checked-files.json';
-const strictTsconfigPath = 'tsconfig.json';
-
-/**
- * TypeScript error types that will be ignored in specific allowed files
- *
- * These error codes result from stricter tsconfig.json config (strictNullChecks, noImplicitAny)
- * and can appear in specific allowed files until those files are fixed.
- *
- * If there are new error codes that should be ignored (e.g. because a new stricter TS compiler
- * option was enabled), add them below.
- */
-const ignoredErrorCodes = new Set([
-  'TS2345',
-  'TS2322',
-  'TS2722',
-  'TS7031',
-  'TS7006',
-  'TS2532',
-  'TS7008',
-  'TS2416',
-  'TS7034',
-  'TS7005',
-  'TS2531',
-  'TS2571',
-  'TS7019',
-  'TS2411',
-  'TS7010',
-  'TS7024',
-  'TS2454',
-  'TS7051',
-  'TS2352',
-  'TS2769',
-  'TS2698',
-  'TS7016',
-  'TS2339',
-  'TS2538',
-]);
-const looselyTypeCheckedFilesRegistryFullPath = join(
-  __dirname,
-  looselyTypeCheckedFilesRegistryPath,
+const ignoredErrorCodesArray = readJSONArray(
+  options['ignored-error-codes'],
+  options.init,
+);
+const looselyTypeCheckedFilePathsArray = readJSONArray(
+  options['loosely-type-checked-files'],
+  options.init,
 );
 
-const looselyTypeCheckedFilePaths = getLooselyTypeCheckedFilePaths(
-  looselyTypeCheckedFilesRegistryFullPath,
-);
-const autofixEnabled = process.argv.includes('--fix');
+if (
+  !Array.isArray(ignoredErrorCodesArray) ||
+  !Array.isArray(looselyTypeCheckedFilePathsArray)
+) {
+  if (ignoredErrorCodesArray instanceof Error) {
+    console.log(ignoredErrorCodesArray.message);
+  }
+  if (looselyTypeCheckedFilePathsArray instanceof Error) {
+    console.log(looselyTypeCheckedFilePathsArray.message);
+  }
 
-console.log(`Running tsc with a strict tsconfig (${strictTsconfigPath})`);
-
-const tscResult = runTsc(strictTsconfigPath);
-
-if (tscResult.status === 0) {
-  console.log(
-    `\n\nCongratulations! There are no errors using the strict version of ${strictTsconfigPath}.`,
-    '\nYou can remove this tool, as well as adjust the main tsconfig.json file to be strict by default.',
-  );
-  process.exit(0);
+  console.log(chalk.yellow('Either fix the files or pass the --init option'));
+  process.exit(1);
 }
 
-const tscErrors = parseTscErrors(tscResult.stdout);
-processExistingTscErrors();
-console.log('\n\n');
-processLooselyTypeCheckedFiles();
+const ignoredErrorCodes = new Set(ignoredErrorCodesArray);
 
-function processExistingTscErrors() {
-  const [ignoredTscErrors, unignoredTscErrors] = partition(
-    tscErrors,
-    (tscError) => {
-      const errorIgnored =
-        ignoredErrorCodes.has(tscError.tscErrorCode) &&
-        looselyTypeCheckedFilePaths.has(tscError.filePath);
+const validationErrors = validateTscErrorCodes(ignoredErrorCodes);
+if (validationErrors.length > 0) {
+  console.log(`Invalid TSC error codes in ${options['ignored-error-codes']}`);
+  validationErrors.forEach(console.log);
+  process.exit(1);
+}
 
-      return errorIgnored;
-    },
-  );
+const looselyTypeCheckedFilePaths = new Set(looselyTypeCheckedFilePathsArray);
 
-  console.log(
-    `${getOrangeText(
-      ignoredTscErrors.length,
-    )} TSC errors have been ignored\n\n`,
-  );
+getProgramInput()
+  .then((programInput) => {
+    const tscErrors = parseTscErrors(programInput);
 
-  if (unignoredTscErrors.length > 0) {
-    console.log(
-      `There are ${getOrangeText(
-        unignoredTscErrors.length,
-      )} TSC errors in the loosely type-checked project.`,
+    if (tscErrors.length === 0) {
+      console.log(chalk.green('No TSC errors detected'));
+      return;
+    }
+
+    console.log(`${chalk.red(tscErrors.length)} errors detected`);
+
+    const filePathsWithErrors = new Set(
+      tscErrors.map((tscError) => tscError.filePath),
     );
 
-    const [
+    if (options.init) {
+      initializeConfigurationFiles(filePathsWithErrors, tscErrors);
+      process.exit(0);
+    }
+
+    const {
+      ignoredTscErrors,
+      unignoredTscErrors,
       tscErrorsThatCouldBeIgnored,
       validTscErrors,
-    ] = partition(unignoredTscErrors, (tscError) =>
-      ignoredErrorCodes.has(tscError.tscErrorCode),
+    } = partitionTscErrors({
+      tscErrors,
+      ignoredErrorCodes,
+      looselyTypeCheckedFilePaths,
+    });
+
+    console.log(
+      `${chalk.yellow(ignoredTscErrors.length)} errors have been ignored`,
     );
 
-    if (tscErrorsThatCouldBeIgnored.length > 0) {
-      const filePathsToStartIgnoring = Array.from(
-        new Set(
-          tscErrorsThatCouldBeIgnored.map((tscError) => tscError.filePath),
-        ),
-      );
-
-      if (autofixEnabled) {
-        // TODO: add files to registry
-        console.log(
-          `${getOrangeText(
-            tscErrorsThatCouldBeIgnored.length,
-          )} TSC errors could be ignored`,
-          `\nAdding the following files to ${looselyTypeCheckedFilesRegistryPath}`,
-        );
-        console.log(filePathsToStartIgnoring);
-      } else {
-        console.log(
-          `${getOrangeText(
-            tscErrorsThatCouldBeIgnored.length,
-          )} TSC errors could be ignored if the files were specified in ${looselyTypeCheckedFilesRegistryPath}`,
-          'They come from the following files:',
-        );
-        console.log(filePathsToStartIgnoring);
-        process.exitCode = 1;
-      }
+    if (unignoredTscErrors.length === 0) {
+      process.exit(0);
     }
 
-    if (validTscErrors.length > 0) {
-      console.log(
-        `${getOrangeText(
-          validTscErrors.length,
-        )} TSC errors could not be ignored.`,
-        '\nRun "npm run lint:types" for details.',
-        '\nErrors appeared in the following files:',
+    console.log(
+      `${chalk.red(unignoredTscErrors.length)} errors were not ignored`,
+    );
+
+    let updateFileRegistryPossible = false;
+
+    updateFileRegistryPossible = reportTscErrorsThatCouldBeIgnored(
+      tscErrorsThatCouldBeIgnored,
+      updateFileRegistryPossible,
+    );
+
+    const looselyTypeCheckedFilePathsWithoutErrors = Array.from(
+      looselyTypeCheckedFilePaths,
+    ).filter((filePath) => !filePathsWithErrors.has(filePath));
+
+    updateFileRegistryPossible = reportLooselyTypeCheckedFilePathsWithoutErrors(
+      looselyTypeCheckedFilePathsWithoutErrors,
+      updateFileRegistryPossible,
+    );
+
+    reportValidTscErrors(validTscErrors);
+
+    if (options['auto-update'] && updateFileRegistryPossible) {
+      updateLooselyTypeCheckedFilePaths(
+        looselyTypeCheckedFilePathsWithoutErrors,
+        tscErrorsThatCouldBeIgnored,
       );
-      console.log(
-        Array.from(new Set(unignoredTscErrors.map((error) => error.filePath))),
-      );
-      process.exitCode = 1;
     }
-  }
+  })
+  .catch((error) => {
+    console.error('Unknown error', error);
+  });
+
+function updateLooselyTypeCheckedFilePaths(
+  looselyTypeCheckedFilePathsWithoutErrors: any[],
+  tscErrorsThatCouldBeIgnored: TscError[],
+) {
+  console.log('Updating the list of loosely type-checked files...');
+
+  const updatedLooselyTypeCheckedFiles = new Set(looselyTypeCheckedFilePaths);
+  looselyTypeCheckedFilePathsWithoutErrors.forEach((filePath) =>
+    updatedLooselyTypeCheckedFiles.delete(filePath),
+  );
+  tscErrorsThatCouldBeIgnored.forEach((tscError) =>
+    updatedLooselyTypeCheckedFiles.add(tscError.filePath),
+  );
+
+  saveJSONArray(
+    options['loosely-type-checked-files'],
+    Array.from(updatedLooselyTypeCheckedFiles),
+  );
+  console.log('The list of loosely type-checked files updated successfully');
 }
 
-function processLooselyTypeCheckedFiles() {
-  const filePathsWithAnyErrors = new Set(
-    tscErrors.map((tscError) => tscError.filePath),
-  );
-  const looselyTypeCheckedFilePathsWithoutErrors = Array.from(
-    looselyTypeCheckedFilePaths,
-  ).filter((filePath) => !filePathsWithAnyErrors.has(filePath));
-
-  if (looselyTypeCheckedFilePathsWithoutErrors.length === 0) {
-    return;
-  }
-
-  if (autofixEnabled) {
+function reportValidTscErrors(validTscErrors: TscError[]) {
+  if (validTscErrors.length > 0) {
     console.log(
-      'Updating the registry of loosely type-checked file paths. Enabling stricter type checking for the files that have no errors:',
+      `${chalk.red(validTscErrors.length)} errors could not be ignored`,
     );
-    console.log(looselyTypeCheckedFilePathsWithoutErrors);
 
-    const looselyTypeCheckedFilePathWithErrors = Array.from(
-      looselyTypeCheckedFilePaths,
-    )
-      .filter((filePath) => filePathsWithAnyErrors.has(filePath))
-      .sort();
-
-    saveJSONFile(
-      looselyTypeCheckedFilesRegistryFullPath,
-      looselyTypeCheckedFilePathWithErrors,
+    validTscErrors.forEach((error) =>
+      console.log(error.rawErrorLines.join('\n')),
     );
-    console.log('Registry updated!');
-  } else {
-    console.log(
-      `Consider removing the following files from ${looselyTypeCheckedFilesRegistryPath}, as they do not contain any errors`,
-    );
-    console.log(looselyTypeCheckedFilePathsWithoutErrors);
     process.exitCode = 1;
   }
 }
 
-console.log('\n\n');
+function reportLooselyTypeCheckedFilePathsWithoutErrors(
+  looselyTypeCheckedFilePathsWithoutErrors: any[],
+  updateFileRegistryPossible: boolean,
+) {
+  if (looselyTypeCheckedFilePathsWithoutErrors.length > 0) {
+    console.log(
+      `${chalk.yellow(
+        looselyTypeCheckedFilePathsWithoutErrors.length,
+      )} loosely type-checked files no longer have any errors and could be strictly type-checked.`,
+    );
+    updateFileRegistryPossible = true;
+
+    if (!options['auto-update']) {
+      console.log(
+        `Use the ${chalk.green(
+          '--auto-update',
+        )} option to update the registry automatically.`,
+      );
+      process.exitCode = 1;
+    }
+  }
+  return updateFileRegistryPossible;
+}
+
+function reportTscErrorsThatCouldBeIgnored(
+  tscErrorsThatCouldBeIgnored: TscError[],
+  updateFileRegistryPossible: boolean,
+) {
+  if (tscErrorsThatCouldBeIgnored.length > 0) {
+    console.log(
+      `${chalk.yellow(
+        tscErrorsThatCouldBeIgnored.length,
+      )} errors could be ignored, as their error codes should be ignored`,
+    );
+    updateFileRegistryPossible = true;
+
+    if (!options['auto-update']) {
+      console.log(
+        `Use the ${chalk.green(
+          '--auto-update',
+        )} option to update the registry automatically.`,
+      );
+      process.exitCode = 1;
+    }
+  }
+
+  return updateFileRegistryPossible;
+}
+
+function initializeConfigurationFiles(
+  filePathsWithErrors: Set<string>,
+  tscErrors: TscError[],
+) {
+  console.log('Initializing configuration files...');
+
+  saveJSONArray(
+    options['loosely-type-checked-files'],
+    Array.from(filePathsWithErrors),
+  );
+  saveJSONArray(
+    options['ignored-error-codes'],
+    Array.from(new Set(tscErrors.map((tscError) => tscError.tscErrorCode))),
+  );
+
+  console.log('Configuration files saved successfully');
+}

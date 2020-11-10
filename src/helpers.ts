@@ -1,33 +1,52 @@
-import { spawnSync } from 'child_process';
 import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { createInterface } from 'readline';
 
-export const readJSONFile = (path: string) => {
-  const fileContent = readFileSync(path, { encoding: 'utf-8' });
+export const readJSONArray = (
+  path: string,
+  ignoreMissingFile: boolean,
+): any[] | Error => {
+  let fileContent: string;
 
-  return JSON.parse(fileContent);
-};
-
-export const saveJSONFile = (path: string, value: any) => {
-  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
-};
-
-export const getLooselyTypeCheckedFilePaths = (registryPath: string) => {
   try {
-    const result: string[] = readJSONFile(registryPath);
-
-    return new Set(result);
+    fileContent = readFileSync(path, { encoding: 'utf-8' });
   } catch (error) {
-    console.error(`Cannot parse ${registryPath}`, error);
-    process.exit(1);
+    if (ignoreMissingFile) {
+      return [];
+    }
+
+    return new Error(`Cannot read file ${path}: ${error.message}`);
   }
+
+  let parsedFile: unknown;
+  try {
+    parsedFile = JSON.parse(fileContent);
+  } catch (error) {
+    return new Error(`Cannot parse JSON file ${path}: ${error.message}`);
+  }
+
+  if (!Array.isArray(parsedFile)) {
+    return new Error(`File ${path} is not a valid array`);
+  }
+
+  return parsedFile;
 };
 
-export const runTsc = (tsconfigPath: string) =>
-  spawnSync('npm', ['run', 'lint:types', '--', '-p', tsconfigPath], {
-    cwd: join(__dirname, '..'),
-    encoding: 'utf-8',
-  });
+export const saveJSONArray = (path: string, arr: string[]) => {
+  const sortedArr = [...arr].sort();
 
-export const getOrangeText = (text: string | number) =>
-  `\x1b[33m${text}\x1b[0m`;
+  writeFileSync(path, `${JSON.stringify(sortedArr, null, 2)}\n`);
+};
+
+export const getProgramInput = () =>
+  new Promise<string[]>((resolve) => {
+    const programInput: string[] = [];
+    const rl = createInterface(process.stdin);
+
+    rl.on('line', (line) => {
+      programInput.push(line);
+    });
+
+    rl.once('close', () => {
+      resolve(programInput);
+    });
+  });
