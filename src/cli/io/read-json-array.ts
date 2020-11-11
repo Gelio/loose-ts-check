@@ -1,5 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs';
-import { createInterface } from 'readline';
+import { readFileSync } from 'fs';
 
 export const readJSONArray = (
   path: string,
@@ -30,23 +29,3 @@ export const readJSONArray = (
 
   return parsedFile;
 };
-
-export const saveJSONArray = (path: string, arr: string[]) => {
-  const sortedArr = [...arr].sort();
-
-  writeFileSync(path, `${JSON.stringify(sortedArr, null, 2)}\n`);
-};
-
-export const getProgramInput = () =>
-  new Promise<string[]>((resolve) => {
-    const programInput: string[] = [];
-    const rl = createInterface(process.stdin);
-
-    rl.on('line', (line) => {
-      programInput.push(line);
-    });
-
-    rl.once('close', () => {
-      resolve(programInput);
-    });
-  });

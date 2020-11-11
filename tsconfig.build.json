@@ -4,5 +4,5 @@
     "outDir": "./dist",
     "noEmit": false
   },
-  "exclude": ["**/*.test.ts"]
+  "files": ["./src/index.ts"]
 }

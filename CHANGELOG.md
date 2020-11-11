@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+Engineering:
+
+1. Refactor the code for easier maintenance
+2. Add unit tests for the CLI and individual functions
+
 ## v1.0.1 (2020-11-10)
 
 Bugfix release
