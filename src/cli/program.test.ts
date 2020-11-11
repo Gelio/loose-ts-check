@@ -265,6 +265,112 @@ describe('program', () => {
         ),
       );
     });
+
+    describe('when using auto-update', () => {
+      const temporaryCliDependencies: typeof cliDependencies = {
+        ...cliDependencies,
+        cliOptions: {
+          ...cliDependencies.cliOptions,
+          'auto-update': true,
+        },
+      };
+
+      it('should add new loosely type-checked files whose errors can be ignored', () => {
+        looselyTypeCheckedFiles = ['a', 'b'];
+        ignoredErrorCodes = ['TS1111', 'TS2222'];
+        const result = program(temporaryCliDependencies, [
+          createErrorLine('a', 'TS1111'),
+          createErrorLine('b', 'TS1111'),
+          createErrorLine('c', 'TS2222'),
+        ]);
+
+        expect(result).toBeUndefined();
+
+        expect(
+          temporaryCliDependencies.saveJSONFile,
+        ).toHaveBeenCalledWith(
+          temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
+          ['a', 'b', 'c'],
+        );
+      });
+
+      it('should remove loosely type-checked file paths that have no errors', () => {
+        looselyTypeCheckedFiles = ['a', 'b'];
+        ignoredErrorCodes = ['TS1111'];
+        const result = program(temporaryCliDependencies, [
+          createErrorLine('a', 'TS1111'),
+        ]);
+
+        expect(result).toBeUndefined();
+
+        expect(
+          temporaryCliDependencies.saveJSONFile,
+        ).toHaveBeenCalledWith(
+          temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
+          ['a'],
+        );
+      });
+
+      it('should not remove error codes that did not occur', () => {
+        looselyTypeCheckedFiles = ['a'];
+        ignoredErrorCodes = ['TS1111', 'TS2222'];
+        const result = program(temporaryCliDependencies, [
+          createErrorLine('a', 'TS1111'),
+        ]);
+
+        expect(result).toBeUndefined();
+
+        expect(temporaryCliDependencies.saveJSONFile).not.toHaveBeenCalledWith(
+          temporaryCliDependencies.cliOptions['ignored-error-codes'],
+          expect.any(Array),
+        );
+      });
+
+      it('should apply both operations on loosely type-checked files correctly', () => {
+        looselyTypeCheckedFiles = [
+          'file that has ignored error',
+          'file that has no errors',
+          'new file that has an ignored error',
+        ];
+        ignoredErrorCodes = ['TS1111'];
+        const result = program(temporaryCliDependencies, [
+          createErrorLine('file that has ignored error', 'TS1111'),
+          createErrorLine('new file that has an ignored error', 'TS1111'),
+          createErrorLine('new file that has a new error', 'TS2222'),
+        ]);
+
+        expect(result?.error).toBe(true);
+
+        expect(
+          temporaryCliDependencies.saveJSONFile,
+        ).toHaveBeenCalledWith(
+          temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
+          ['file that has ignored error', 'new file that has an ignored error'],
+        );
+      });
+
+      it('should exit with success with auto-update results in no valid TS errors', () => {
+        looselyTypeCheckedFiles = [
+          'file that has ignored error',
+          'file that has no errors',
+          'new file that has an ignored error',
+        ];
+        ignoredErrorCodes = ['TS1111'];
+        const result = program(temporaryCliDependencies, [
+          createErrorLine('file that has ignored error', 'TS1111'),
+          createErrorLine('new file that has an ignored error', 'TS1111'),
+        ]);
+
+        expect(result).toBeUndefined();
+
+        expect(
+          temporaryCliDependencies.saveJSONFile,
+        ).toHaveBeenCalledWith(
+          temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
+          ['file that has ignored error', 'new file that has an ignored error'],
+        );
+      });
+    });
   });
 });
 
