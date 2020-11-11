@@ -8,8 +8,13 @@ import {
   validateTscErrorCodes,
 } from './tsc-errors';
 import { saveJSONArray, readJSONArray, getProgramInput } from './helpers';
+import {
+  CliOptions,
+  getCliDependencies,
+  initializeConfigurationFiles,
+} from './cli';
 
-const options = yargs(process.argv)
+const options: CliOptions = yargs(process.argv)
   .options({
     'ignored-error-codes': {
       type: 'string',
@@ -97,7 +102,8 @@ const options = yargs(process.argv)
       );
 
       if (options.init) {
-        initializeConfigurationFiles(filePathsWithErrors, tscErrors);
+        const cliDependencies = getCliDependencies(options);
+        initializeConfigurationFiles(cliDependencies, tscErrors);
         process.exit(0);
       }
 
@@ -242,22 +248,4 @@ function reportTscErrorsThatCouldBeIgnored(
   }
 
   return updateFileRegistryPossible;
-}
-
-function initializeConfigurationFiles(
-  filePathsWithErrors: Set<string>,
-  tscErrors: TscError[],
-) {
-  console.log('Initializing configuration files...');
-
-  saveJSONArray(
-    options['loosely-type-checked-files'],
-    Array.from(filePathsWithErrors),
-  );
-  saveJSONArray(
-    options['ignored-error-codes'],
-    Array.from(new Set(tscErrors.map((tscError) => tscError.tscErrorCode))),
-  );
-
-  console.log('Configuration files saved successfully');
 }
