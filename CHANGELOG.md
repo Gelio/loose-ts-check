@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## v1.1.0 (2020-11-11)
+
+Features:
+
+1. Detect which ignored error codes specified in the config that did not occur.
+
+   If `--auto-update` is passed in, those error codes are automatically removed from the config.
 
 Engineering:
 
