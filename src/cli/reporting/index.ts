@@ -3,3 +3,4 @@ export * from './report-loosely-type-checked-file-paths-without-errors';
 export * from './report-valid-tsc-errors';
 export * from './report-result';
 export * from './aggregate-reporting-results';
+export * from './report-ignored-errors-that-did-not-occur';
