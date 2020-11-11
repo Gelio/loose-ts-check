@@ -6,13 +6,15 @@ import {
   partitionTscErrors,
   validateTscErrorCodes,
 } from './tsc-errors';
-import { readJSONArray, getProgramInput } from './helpers';
 import {
   aggregateReportingResults,
   CliOptions,
   cliOptionsConfig,
   getCliDependencies,
+  getProgramInput,
+  getProgramInputAndFail,
   initializeConfigurationFiles,
+  readConfig,
   reportLooselyTypeCheckedFilePathsWithoutErrors,
   reportTscErrorsThatCouldBeIgnored,
   reportValidTscErrors,
@@ -25,30 +27,16 @@ const options: CliOptions = yargs(process.argv)
 const cliDependencies = getCliDependencies(options);
 
 (() => {
-  const ignoredErrorCodesArray = readJSONArray(
-    options['ignored-error-codes'],
-    options.init,
-  );
-  const looselyTypeCheckedFilePathsArray = readJSONArray(
-    options['loosely-type-checked-files'],
-    options.init,
-  );
-
-  if (
-    !Array.isArray(ignoredErrorCodesArray) ||
-    !Array.isArray(looselyTypeCheckedFilePathsArray)
-  ) {
-    if (ignoredErrorCodesArray instanceof Error) {
-      console.log(ignoredErrorCodesArray.message);
-    }
-    if (looselyTypeCheckedFilePathsArray instanceof Error) {
-      console.log(looselyTypeCheckedFilePathsArray.message);
-    }
-
-    console.log(chalk.yellow('Either fix the files or pass the --init option'));
+  const readResult = readConfig(cliDependencies);
+  if (!readResult) {
     getProgramInputAndFail();
     return;
   }
+
+  const {
+    ignoredErrorCodesArray,
+    looselyTypeCheckedFilePathsArray,
+  } = readResult;
 
   const ignoredErrorCodes = new Set<string>(ignoredErrorCodesArray);
 
@@ -135,7 +123,3 @@ const cliDependencies = getCliDependencies(options);
       console.error('Unknown error', error);
     });
 })();
-
-function getProgramInputAndFail() {
-  getProgramInput().then(() => process.exit(1));
-}

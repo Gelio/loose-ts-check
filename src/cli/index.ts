@@ -3,3 +3,4 @@ export * from './config';
 export * from './cli-dependencies';
 export * from './reporting';
 export * from './cli-options-config';
+export { getProgramInput, getProgramInputAndFail } from './io';
