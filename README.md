@@ -13,7 +13,7 @@ some existing files are allowed to have TS errors.
 
 ## Features
 
-- ignored specific TS errors from specific files
+- ignores specific TS errors from specific files
 - detects files that no longer have to be loosely type-checked
 - auto-updates the loosely type-checked list of files when a file no longer has error
 
