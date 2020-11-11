@@ -266,6 +266,19 @@ describe('program', () => {
       );
     });
 
+    it('should report the number of ignored errors that did not occur', () => {
+      looselyTypeCheckedFiles = ['a'];
+      ignoredErrorCodes = ['TS1111', 'TS2222', 'TS3333'];
+      const result = program(cliDependencies, [createErrorLine('a', 'TS1111')]);
+
+      expect(result).toBeUndefined();
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        expect.stringContaining(
+          '2 currently ignored error codes did not occur',
+        ),
+      );
+    });
+
     describe('when using auto-update', () => {
       const temporaryCliDependencies: typeof cliDependencies = {
         ...cliDependencies,
@@ -311,7 +324,7 @@ describe('program', () => {
         );
       });
 
-      it('should not remove error codes that did not occur', () => {
+      it('should remove error codes that did not occur', () => {
         looselyTypeCheckedFiles = ['a'];
         ignoredErrorCodes = ['TS1111', 'TS2222'];
         const result = program(temporaryCliDependencies, [
@@ -320,9 +333,11 @@ describe('program', () => {
 
         expect(result).toBeUndefined();
 
-        expect(temporaryCliDependencies.saveJSONFile).not.toHaveBeenCalledWith(
+        expect(
+          temporaryCliDependencies.saveJSONFile,
+        ).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['ignored-error-codes'],
-          expect.any(Array),
+          ['TS1111'],
         );
       });
 

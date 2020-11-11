@@ -9,10 +9,12 @@ import { CliDependencies } from './cli-dependencies';
 import {
   initializeConfigurationFiles,
   readConfig,
+  updateIgnoredErrorCodes,
   updateLooselyTypeCheckedFilePaths,
 } from './config';
 import {
   aggregateReportingResults,
+  reportIgnoredErrorsThatDidNotOccur,
   reportLooselyTypeCheckedFilePathsWithoutErrors,
   reportTscErrorsThatCouldBeIgnored,
   reportValidTscErrors,
@@ -86,6 +88,7 @@ export const program = (
   const updatedLooselyTypeCheckedFilePaths = new Set(
     looselyTypeCheckedFilePaths,
   );
+  const updatedIgnoredErrorCodes = new Set(ignoredErrorCodes);
 
   const reportingResult = aggregateReportingResults([
     reportTscErrorsThatCouldBeIgnored(
@@ -99,6 +102,11 @@ export const program = (
       tscErrors,
     ),
     reportValidTscErrors(cliDependencies, validTscErrors),
+    reportIgnoredErrorsThatDidNotOccur(
+      cliDependencies,
+      tscErrors,
+      updatedIgnoredErrorCodes,
+    ),
   ]);
 
   if (cliDependencies.cliOptions['auto-update']) {
@@ -106,6 +114,11 @@ export const program = (
       cliDependencies,
       looselyTypeCheckedFilePaths,
       updatedLooselyTypeCheckedFilePaths,
+    );
+    updateIgnoredErrorCodes(
+      cliDependencies,
+      ignoredErrorCodes,
+      updatedIgnoredErrorCodes,
     );
   }
 
