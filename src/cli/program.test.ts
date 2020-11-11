@@ -1,7 +1,6 @@
+import * as chalk from 'chalk';
 import { getDefaultCliOptions } from './get-default-cli-options';
 import { program } from './program';
-
-const chalkReset = '\x1B[39m';
 
 describe('program', () => {
   const cliDependencies: Parameters<typeof program>[0] = {
@@ -14,6 +13,11 @@ describe('program', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     (cliDependencies.readJSONArray as jest.Mock).mockImplementation(() => []);
+  });
+
+  beforeAll(() => {
+    // @ts-ignore
+    chalk.level = 0;
   });
 
   describe('when initializing config files', () => {
@@ -174,7 +178,7 @@ describe('program', () => {
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
-        expect.stringContaining(`4${chalkReset} errors detected`),
+        expect.stringContaining('4 errors detected'),
       );
     });
 
@@ -190,7 +194,7 @@ describe('program', () => {
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
-        expect.stringContaining(`1${chalkReset} errors have been ignored`),
+        expect.stringContaining('1 errors have been ignored'),
       );
     });
 
@@ -206,7 +210,7 @@ describe('program', () => {
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
-        expect.stringContaining(`3${chalkReset} errors were not ignored`),
+        expect.stringContaining('3 errors were not ignored'),
       );
     });
 
@@ -222,7 +226,7 @@ describe('program', () => {
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
-        expect.stringContaining(`1${chalkReset} errors could be ignored`),
+        expect.stringContaining('1 errors could be ignored'),
       );
     });
 
@@ -239,7 +243,7 @@ describe('program', () => {
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
         expect.stringContaining(
-          `1${chalkReset} loosely type-checked files no longer have any errors and could be strictly type-checked`,
+          '1 loosely type-checked files no longer have any errors and could be strictly type-checked',
         ),
       );
     });
@@ -257,7 +261,7 @@ describe('program', () => {
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
         expect.stringContaining(
-          `2${chalkReset} errors could not be ignored as those codes are not in the ignored list`,
+          '2 errors could not be ignored as those codes are not in the ignored list',
         ),
       );
     });
