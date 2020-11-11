@@ -1,6 +1,8 @@
 import { getDefaultCliOptions } from './get-default-cli-options';
 import { program } from './program';
 
+const chalkReset = '\x1B[39m';
+
 describe('program', () => {
   const cliDependencies: Parameters<typeof program>[0] = {
     cliOptions: getDefaultCliOptions(),
@@ -35,7 +37,7 @@ describe('program', () => {
       const filePath = 'app/pages/site/site-pipelines/new.ts';
       const tsErrorCode = 'TS2532';
       const result = program(initCliDependencies, [
-        `${filePath}(1,45): error ${tsErrorCode}: Object is possibly 'undefined'.`,
+        createErrorLine(filePath, tsErrorCode),
       ]);
 
       expect(result).toBeUndefined();
@@ -68,7 +70,7 @@ describe('program', () => {
       const filePath = 'app/pages/site/site-pipelines/new.ts';
       const tsErrorCode = 'TS2532';
       const result = program(temporaryCliDependencies, [
-        `${filePath}(1,45): error ${tsErrorCode}: Object is possibly 'undefined'.`,
+        createErrorLine(filePath, tsErrorCode),
       ]);
 
       expect(result).toBeUndefined();
@@ -147,4 +149,123 @@ describe('program', () => {
       expect.stringContaining('No TSC errors detected'),
     );
   });
+
+  describe('with valid config and input', () => {
+    let looselyTypeCheckedFiles: string[] = [];
+    let ignoredErrorCodes: string[] = [];
+
+    beforeEach(() => {
+      (cliDependencies.readJSONArray as jest.Mock).mockImplementation((path) =>
+        path === cliDependencies.cliOptions['ignored-error-codes']
+          ? ignoredErrorCodes
+          : looselyTypeCheckedFiles,
+      );
+    });
+
+    it('should report the number of all errors', () => {
+      looselyTypeCheckedFiles = ['a', 'b'];
+      ignoredErrorCodes = ['TS1234'];
+      const result = program(cliDependencies, [
+        createErrorLine('a', 'TS1234'),
+        createErrorLine('a', 'TS1597'),
+        createErrorLine('c', 'TS1111'),
+        createErrorLine('c', 'TS1234'),
+      ]);
+
+      expect(result?.error).toBe(true);
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        expect.stringContaining(`4${chalkReset} errors detected`),
+      );
+    });
+
+    it('should report the number of ignored errors', () => {
+      looselyTypeCheckedFiles = ['a', 'b'];
+      ignoredErrorCodes = ['TS1234'];
+      const result = program(cliDependencies, [
+        createErrorLine('a', 'TS1234'),
+        createErrorLine('a', 'TS1597'),
+        createErrorLine('c', 'TS1111'),
+        createErrorLine('c', 'TS1234'),
+      ]);
+
+      expect(result?.error).toBe(true);
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        expect.stringContaining(`1${chalkReset} errors have been ignored`),
+      );
+    });
+
+    it('should report the number of unignored errors', () => {
+      looselyTypeCheckedFiles = ['a', 'b'];
+      ignoredErrorCodes = ['TS1234'];
+      const result = program(cliDependencies, [
+        createErrorLine('a', 'TS1234'),
+        createErrorLine('a', 'TS1597'),
+        createErrorLine('c', 'TS1111'),
+        createErrorLine('c', 'TS1234'),
+      ]);
+
+      expect(result?.error).toBe(true);
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        expect.stringContaining(`3${chalkReset} errors were not ignored`),
+      );
+    });
+
+    it('should report the number of errors that could be ignored', () => {
+      looselyTypeCheckedFiles = ['a', 'b'];
+      ignoredErrorCodes = ['TS1234'];
+      const result = program(cliDependencies, [
+        createErrorLine('a', 'TS1234'),
+        createErrorLine('a', 'TS1597'),
+        createErrorLine('c', 'TS1111'),
+        createErrorLine('c', 'TS1234'),
+      ]);
+
+      expect(result?.error).toBe(true);
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        expect.stringContaining(`1${chalkReset} errors could be ignored`),
+      );
+    });
+
+    it('should report the number of files that no longer have to be ignored', () => {
+      looselyTypeCheckedFiles = ['a', 'b'];
+      ignoredErrorCodes = ['TS1234'];
+      const result = program(cliDependencies, [
+        createErrorLine('a', 'TS1234'),
+        createErrorLine('a', 'TS1597'),
+        createErrorLine('c', 'TS1111'),
+        createErrorLine('c', 'TS1234'),
+      ]);
+
+      expect(result?.error).toBe(true);
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        expect.stringContaining(
+          `1${chalkReset} loosely type-checked files no longer have any errors and could be strictly type-checked`,
+        ),
+      );
+    });
+
+    it('should report the number valid TSC errors', () => {
+      looselyTypeCheckedFiles = ['a', 'b'];
+      ignoredErrorCodes = ['TS1234'];
+      const result = program(cliDependencies, [
+        createErrorLine('a', 'TS1234'),
+        createErrorLine('a', 'TS1597'),
+        createErrorLine('c', 'TS1111'),
+        createErrorLine('c', 'TS1234'),
+      ]);
+
+      expect(result?.error).toBe(true);
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        expect.stringContaining(
+          `2${chalkReset} errors could not be ignored as those codes are not in the ignored list`,
+        ),
+      );
+    });
+  });
 });
+
+const createErrorLine = (
+  path: string,
+  tsErrorCode: string,
+  description = 'stub error description generated in test',
+) => `${path}(94,15): error ${tsErrorCode}: ${description}`;
