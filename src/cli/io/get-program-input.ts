@@ -13,7 +13,3 @@ export const getProgramInput = () =>
       resolve(programInput);
     });
   });
-
-export function getProgramInputAndFail() {
-  getProgramInput().then(() => process.exit(1));
-}
