@@ -4,47 +4,25 @@ import * as chalk from 'chalk';
 import {
   parseTscErrors,
   partitionTscErrors,
-  TscError,
   validateTscErrorCodes,
 } from './tsc-errors';
-import { saveJSONArray, readJSONArray, getProgramInput } from './helpers';
+import { readJSONArray, getProgramInput } from './helpers';
 import {
+  aggregateReportingResults,
   CliOptions,
+  cliOptionsConfig,
   getCliDependencies,
   initializeConfigurationFiles,
+  reportLooselyTypeCheckedFilePathsWithoutErrors,
+  reportTscErrorsThatCouldBeIgnored,
+  reportValidTscErrors,
+  updateLooselyTypeCheckedFilePaths,
 } from './cli';
 
 const options: CliOptions = yargs(process.argv)
-  .options({
-    'ignored-error-codes': {
-      type: 'string',
-      description:
-        'Path to a JSON file with an array of TSC error codes that should be ignored',
-      default: 'ignored-error-codes.json',
-      normalize: true,
-    },
-    'loosely-type-checked-files': {
-      type: 'string',
-      description:
-        'Path to a JSON file with an array of file paths that should be loosely checked.' +
-        '\nSpecified errors will be ignored in those files.',
-      default: 'loosely-type-checked-files.json',
-      normalize: true,
-    },
-    init: {
-      alias: ['i'],
-      type: 'boolean',
-      description: 'Initialize the JSON files with existing TSC errors',
-      default: false,
-    },
-    'auto-update': {
-      type: 'boolean',
-      description:
-        'When specified, the files that no longer have errors will be removed from the list of loosely type-checked files',
-      default: false,
-    },
-  })
+  .options(cliOptionsConfig)
   .parse();
+const cliDependencies = getCliDependencies(options);
 
 (() => {
   const ignoredErrorCodesArray = readJSONArray(
@@ -97,12 +75,7 @@ const options: CliOptions = yargs(process.argv)
 
       console.log(`${chalk.red(tscErrors.length)} errors detected`);
 
-      const filePathsWithErrors = new Set(
-        tscErrors.map((tscError) => tscError.filePath),
-      );
-
       if (options.init) {
-        const cliDependencies = getCliDependencies(options);
         initializeConfigurationFiles(cliDependencies, tscErrors);
         process.exit(0);
       }
@@ -128,29 +101,33 @@ const options: CliOptions = yargs(process.argv)
         );
       }
 
-      let updateFileRegistryPossible = false;
-
-      updateFileRegistryPossible = reportTscErrorsThatCouldBeIgnored(
-        tscErrorsThatCouldBeIgnored,
-        updateFileRegistryPossible,
-      );
-
-      const looselyTypeCheckedFilePathsWithoutErrors = Array.from(
+      const updatedLooselyTypeCheckedFilePaths = new Set(
         looselyTypeCheckedFilePaths,
-      ).filter((filePath) => !filePathsWithErrors.has(filePath));
-
-      updateFileRegistryPossible = reportLooselyTypeCheckedFilePathsWithoutErrors(
-        looselyTypeCheckedFilePathsWithoutErrors,
-        updateFileRegistryPossible,
       );
 
-      reportValidTscErrors(validTscErrors);
-
-      if (options['auto-update'] && updateFileRegistryPossible) {
-        updateLooselyTypeCheckedFilePaths(
-          looselyTypeCheckedFilePaths,
-          looselyTypeCheckedFilePathsWithoutErrors,
+      const reportingResult = aggregateReportingResults([
+        reportTscErrorsThatCouldBeIgnored(
+          cliDependencies,
           tscErrorsThatCouldBeIgnored,
+          updatedLooselyTypeCheckedFilePaths,
+        ),
+        reportLooselyTypeCheckedFilePathsWithoutErrors(
+          cliDependencies,
+          updatedLooselyTypeCheckedFilePaths,
+          tscErrors,
+        ),
+        reportValidTscErrors(cliDependencies, validTscErrors),
+      ]);
+
+      if (reportingResult?.shouldFail) {
+        process.exitCode = 1;
+      }
+
+      if (options['auto-update']) {
+        updateLooselyTypeCheckedFilePaths(
+          cliDependencies,
+          looselyTypeCheckedFilePaths,
+          updatedLooselyTypeCheckedFilePaths,
         );
       }
     })
@@ -161,91 +138,4 @@ const options: CliOptions = yargs(process.argv)
 
 function getProgramInputAndFail() {
   getProgramInput().then(() => process.exit(1));
-}
-
-function updateLooselyTypeCheckedFilePaths(
-  looselyTypeCheckedFilePaths: Set<string>,
-  looselyTypeCheckedFilePathsWithoutErrors: any[],
-  tscErrorsThatCouldBeIgnored: TscError[],
-) {
-  console.log('Updating the list of loosely type-checked files...');
-
-  const updatedLooselyTypeCheckedFiles = new Set(looselyTypeCheckedFilePaths);
-  looselyTypeCheckedFilePathsWithoutErrors.forEach((filePath) =>
-    updatedLooselyTypeCheckedFiles.delete(filePath),
-  );
-  tscErrorsThatCouldBeIgnored.forEach((tscError) =>
-    updatedLooselyTypeCheckedFiles.add(tscError.filePath),
-  );
-
-  saveJSONArray(
-    options['loosely-type-checked-files'],
-    Array.from(updatedLooselyTypeCheckedFiles),
-  );
-  console.log('The list of loosely type-checked files updated successfully');
-}
-
-function reportValidTscErrors(validTscErrors: TscError[]) {
-  if (validTscErrors.length > 0) {
-    console.log(
-      `${chalk.red(
-        validTscErrors.length,
-      )} errors could not be ignored as those codes are not in the ignored list`,
-    );
-
-    validTscErrors.forEach((error) =>
-      console.log(error.rawErrorLines.join('\n')),
-    );
-    process.exitCode = 1;
-  }
-}
-
-function reportLooselyTypeCheckedFilePathsWithoutErrors(
-  looselyTypeCheckedFilePathsWithoutErrors: any[],
-  updateFileRegistryPossible: boolean,
-) {
-  if (looselyTypeCheckedFilePathsWithoutErrors.length > 0) {
-    console.log(
-      `${chalk.yellow(
-        looselyTypeCheckedFilePathsWithoutErrors.length,
-      )} loosely type-checked files no longer have any errors and could be strictly type-checked.`,
-    );
-    console.log(looselyTypeCheckedFilePathsWithoutErrors);
-    updateFileRegistryPossible = true;
-
-    if (!options['auto-update']) {
-      console.log(
-        `Use the ${chalk.green(
-          '--auto-update',
-        )} option to update the registry automatically.`,
-      );
-      process.exitCode = 1;
-    }
-  }
-  return updateFileRegistryPossible;
-}
-
-function reportTscErrorsThatCouldBeIgnored(
-  tscErrorsThatCouldBeIgnored: TscError[],
-  updateFileRegistryPossible: boolean,
-) {
-  if (tscErrorsThatCouldBeIgnored.length > 0) {
-    console.log(
-      `${chalk.yellow(
-        tscErrorsThatCouldBeIgnored.length,
-      )} errors could be ignored, as their error codes should be ignored`,
-    );
-    updateFileRegistryPossible = true;
-
-    if (!options['auto-update']) {
-      console.log(
-        `Use the ${chalk.green(
-          '--auto-update',
-        )} option to update the registry automatically.`,
-      );
-      process.exitCode = 1;
-    }
-  }
-
-  return updateFileRegistryPossible;
 }
