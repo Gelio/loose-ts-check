@@ -128,3 +128,19 @@ tsc | npx loose-ts-check
 ```
 
 instead of `tsc` to do type-checking.
+
+## Development
+
+To verify the correctness, run:
+
+```sh
+npm run type-check
+npm run lint:formatting
+npm run test
+```
+
+## Contributing
+
+Contributions are welcome!
+
+Make sure the CI passes on your PRs, and that your code is covered by unit tests.
