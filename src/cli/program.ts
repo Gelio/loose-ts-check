@@ -34,7 +34,9 @@ export const program = (
     looselyTypeCheckedFilePathsArray,
   } = readResult;
 
-  const ignoredErrorCodes = new Set<string>(ignoredErrorCodesArray);
+  const ignoredErrorCodes: ReadonlySet<string> = new Set<string>(
+    ignoredErrorCodesArray,
+  );
 
   const validationErrors = validateTscErrorCodes(ignoredErrorCodes);
   if (validationErrors.length > 0) {
@@ -46,7 +48,7 @@ export const program = (
     return { error: true };
   }
 
-  const looselyTypeCheckedFilePaths = new Set<string>(
+  const looselyTypeCheckedFilePaths: ReadonlySet<string> = new Set<string>(
     looselyTypeCheckedFilePathsArray,
   );
 

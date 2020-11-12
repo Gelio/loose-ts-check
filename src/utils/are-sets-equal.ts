@@ -1,4 +1,7 @@
-export const areSetsEqual = (set1: Set<any>, set2: Set<any>) => {
+export const areSetsEqual = (
+  set1: ReadonlySet<any>,
+  set2: ReadonlySet<any>,
+) => {
   if (set1 === set2) {
     return true;
   }

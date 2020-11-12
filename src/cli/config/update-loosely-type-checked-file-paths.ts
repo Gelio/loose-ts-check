@@ -7,7 +7,7 @@ export function updateLooselyTypeCheckedFilePaths(
     log,
     saveJSONFile,
   }: Pick<CliDependencies, 'cliOptions' | 'log' | 'saveJSONFile'>,
-  looselyTypeCheckedFilePaths: Set<string>,
+  looselyTypeCheckedFilePaths: ReadonlySet<string>,
   updatedLooselyTypeCheckedFilePaths: Set<string>,
 ) {
   if (
