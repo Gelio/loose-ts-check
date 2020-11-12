@@ -7,11 +7,13 @@ export const readConfig = ({
   log,
   cliOptions,
 }: Pick<CliDependencies, 'readJSONArray' | 'log' | 'cliOptions'>) => {
-  const ignoredErrorCodesArray: string[] | Error = readJSONArray(
+  const ignoredErrorCodesArray: readonly string[] | Error = readJSONArray(
     cliOptions['ignored-error-codes'],
     cliOptions.init,
   );
-  const looselyTypeCheckedFilePathsArray: string[] | Error = readJSONArray(
+  const looselyTypeCheckedFilePathsArray:
+    | readonly string[]
+    | Error = readJSONArray(
     cliOptions['loosely-type-checked-files'],
     cliOptions.init,
   );

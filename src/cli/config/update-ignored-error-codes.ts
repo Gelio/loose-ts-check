@@ -7,7 +7,7 @@ export function updateIgnoredErrorCodes(
     log,
     saveJSONFile,
   }: Pick<CliDependencies, 'cliOptions' | 'log' | 'saveJSONFile'>,
-  ignoredErrorCodes: Set<string>,
+  ignoredErrorCodes: ReadonlySet<string>,
   updatedIgnoredErrorCodes: Set<string>,
 ) {
   if (areSetsEqual(ignoredErrorCodes, updatedIgnoredErrorCodes)) {

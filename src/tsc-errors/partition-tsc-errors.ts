@@ -8,8 +8,8 @@ export const partitionTscErrors = ({
   ignoredErrorCodes,
 }: {
   tscErrors: TscError[];
-  looselyTypeCheckedFilePaths: Set<string>;
-  ignoredErrorCodes: Set<string>;
+  looselyTypeCheckedFilePaths: ReadonlySet<string>;
+  ignoredErrorCodes: ReadonlySet<string>;
 }) => {
   const [ignoredTscErrors, unignoredTscErrors] = partition(
     tscErrors,
