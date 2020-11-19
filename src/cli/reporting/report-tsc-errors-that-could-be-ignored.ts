@@ -18,6 +18,10 @@ export function reportTscErrorsThatCouldBeIgnored(
     )} errors could be ignored, as their error codes are ignored`,
   );
 
+  tscErrorsThatCouldBeIgnored.forEach((tscError) =>
+    log(tscError.rawErrorLines.join('\n')),
+  );
+
   if (!cliOptions['auto-update']) {
     log(
       `Use the ${green(
