@@ -1,6 +1,6 @@
 {
   "name": "loose-ts-check",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Run TS type-check and ignore certain errors in some files",
   "bin": "bin/loose-ts-check",
   "scripts": {
