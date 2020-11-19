@@ -21,6 +21,10 @@
     "loose",
     "config"
   ],
+  "files": [
+    "dist",
+    "bin"
+  ],
   "author": "Grzegorz Rozdzialik <voreny.gelio@gmail.com>",
   "license": "MIT",
   "bugs": {
