@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.0 (2020-11-19)
+
+Features:
+
+1. Display a list of all errors that cannot be ignored.
+
 ## v1.1.0 (2020-11-11)
 
 Features:

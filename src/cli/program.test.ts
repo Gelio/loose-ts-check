@@ -230,6 +230,26 @@ describe('program', () => {
       );
     });
 
+    it('should display the errors that could be ignored', () => {
+      looselyTypeCheckedFiles = ['a', 'b'];
+      ignoredErrorCodes = ['TS1234'];
+      const result = program(cliDependencies, [
+        createErrorLine('a', 'TS1234'),
+        createErrorLine('a', 'TS1597'),
+        createErrorLine('c', 'TS1111'),
+        createErrorLine('c', 'TS1234'),
+        createErrorLine('d', 'TS1234'),
+      ]);
+
+      expect(result?.error).toBe(true);
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        createErrorLine('c', 'TS1234'),
+      );
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        createErrorLine('d', 'TS1234'),
+      );
+    });
+
     it('should report the number of files that no longer have to be ignored', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
@@ -263,6 +283,25 @@ describe('program', () => {
         expect.stringContaining(
           '2 errors could not be ignored as those codes are not in the ignored list',
         ),
+      );
+    });
+
+    it('should display valid TSC errors', () => {
+      looselyTypeCheckedFiles = ['a', 'b'];
+      ignoredErrorCodes = ['TS1234'];
+      const result = program(cliDependencies, [
+        createErrorLine('a', 'TS1234'),
+        createErrorLine('a', 'TS1597'),
+        createErrorLine('c', 'TS1111'),
+        createErrorLine('c', 'TS1234'),
+      ]);
+
+      expect(result?.error).toBe(true);
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        createErrorLine('a', 'TS1597'),
+      );
+      expect(cliDependencies.log).toHaveBeenCalledWith(
+        createErrorLine('c', 'TS1111'),
       );
     });
 
