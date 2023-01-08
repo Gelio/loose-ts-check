@@ -16,7 +16,7 @@ describe('program', () => {
   });
 
   beforeAll(() => {
-    // @ts-ignore
+    // @ts-expect-error
     chalk.level = 0;
   });
 
