@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Maintenance work (update npm packages, use newer Node versions in CI).
+- Add integration tests
+
+  They give more confidence that the tool is working as expected.
 
 ## v1.2.0 (2020-11-19)
 
