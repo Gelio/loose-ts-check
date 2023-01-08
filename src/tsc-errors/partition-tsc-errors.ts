@@ -1,20 +1,21 @@
+import { FilePathMatcher } from '../file-path-matcher';
 import { partition } from '../utils';
 
 import { TscError } from './types';
 
 export const partitionTscErrors = ({
   tscErrors,
-  looselyTypeCheckedFilePaths,
+  looselyTypeCheckedFilePathMatcher,
   ignoredErrorCodes,
 }: {
   tscErrors: TscError[];
-  looselyTypeCheckedFilePaths: ReadonlySet<string>;
+  looselyTypeCheckedFilePathMatcher: FilePathMatcher;
   ignoredErrorCodes: ReadonlySet<string>;
 }) => {
   const [ignoredTscErrors, unignoredTscErrors] = partition(
     tscErrors,
     (tscError) =>
-      looselyTypeCheckedFilePaths.has(tscError.filePath) &&
+      looselyTypeCheckedFilePathMatcher.matches(tscError.filePath) &&
       ignoredErrorCodes.has(tscError.tscErrorCode),
   );
 

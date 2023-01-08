@@ -1,4 +1,5 @@
 import * as chalk from 'chalk';
+import { FilePathMatcher } from '../file-path-matcher';
 
 import {
   parseTscErrors,
@@ -46,7 +47,7 @@ export const program = (
     return { error: true };
   }
 
-  const looselyTypeCheckedFilePaths: ReadonlySet<string> = new Set<string>(
+  const looselyTypeCheckedFilePathMatcher = new FilePathMatcher(
     looselyTypeCheckedFilePathsArray,
   );
 
@@ -72,7 +73,7 @@ export const program = (
   } = partitionTscErrors({
     tscErrors,
     ignoredErrorCodes,
-    looselyTypeCheckedFilePaths,
+    looselyTypeCheckedFilePathMatcher,
   });
 
   cliDependencies.log(
@@ -86,7 +87,7 @@ export const program = (
   }
 
   const updatedLooselyTypeCheckedFilePaths = new Set(
-    looselyTypeCheckedFilePaths,
+    looselyTypeCheckedFilePathsArray,
   );
   const updatedIgnoredErrorCodes = new Set(ignoredErrorCodes);
 
@@ -98,6 +99,7 @@ export const program = (
     ),
     reportLooselyTypeCheckedFilePathsWithoutErrors(
       cliDependencies,
+      looselyTypeCheckedFilePathMatcher,
       updatedLooselyTypeCheckedFilePaths,
       tscErrors,
     ),
@@ -112,7 +114,7 @@ export const program = (
   if (cliDependencies.cliOptions['auto-update']) {
     updateLooselyTypeCheckedFilePaths(
       cliDependencies,
-      looselyTypeCheckedFilePaths,
+      new Set(looselyTypeCheckedFilePathsArray),
       updatedLooselyTypeCheckedFilePaths,
     );
     updateIgnoredErrorCodes(

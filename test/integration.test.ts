@@ -44,8 +44,11 @@ function getTestDirPaths({
 }
 
 const looseTsCheckBinaryPath = join(process.cwd(), 'bin', 'loose-ts-check');
+const looseTsCheckCommand = `FORCE_COLOR=0 ${looseTsCheckBinaryPath}`;
 
-const tsVersions = ['3.9', '4.0', '4.4', '4.9', 'latest'];
+const tsVersions = process.env.ONLY_LATEST_VERSION
+  ? ['latest']
+  : ['3.9', '4.0', '4.4', '4.9', 'latest'];
 
 async function prepareTestDirectory({
   tsVersion,
@@ -92,7 +95,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath} --init`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand} --init`,
       { cwd: testDirPath },
     );
 
@@ -111,7 +114,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath} --auto-update`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand} --auto-update`,
       { cwd: testDirPath },
     );
 
@@ -130,7 +133,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath}`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand}`,
       { cwd: testDirPath },
     );
   });
@@ -149,7 +152,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath}`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand}`,
       { cwd: testDirPath },
     );
   });
@@ -167,7 +170,7 @@ for (const tsVersion of tsVersions) {
 
     const { error, stdout } = await runCommand(
       // TODO: do not use pipe so tests can run on Windows too
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath}`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand}`,
       { cwd: testDirPath },
     );
     expect(error).toBeDefined();
@@ -178,5 +181,41 @@ for (const tsVersion of tsVersions) {
     expect(stdout).toEqual(
       expect.stringContaining('1 currently ignored error codes did not occur'),
     );
+  });
+
+  test(`"wildcard-paths-check" works with TS ${tsVersion}`, async () => {
+    const { testSourceDirPath, testDirPath } = getTestDirPaths({
+      testDirName: 'wildcard-paths-check',
+      tsVersion,
+    });
+    await prepareTestDirectory({
+      testSourceDirPath,
+      testDirPath,
+      tsVersion,
+    });
+
+    await runCommandExpectSuccess(
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand}`,
+      { cwd: testDirPath },
+    );
+  });
+
+  test(`"wildcard-paths-auto-update" works with TS ${tsVersion}`, async () => {
+    const { testSourceDirPath, testDirPath } = getTestDirPaths({
+      testDirName: 'wildcard-paths-auto-update',
+      tsVersion,
+    });
+    await prepareTestDirectory({
+      testSourceDirPath,
+      testDirPath,
+      tsVersion,
+    });
+
+    await runCommandExpectSuccess(
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand} --auto-update`,
+      { cwd: testDirPath },
+    );
+
+    await diffExpectedConfigFiles(testDirPath);
   });
 }

@@ -1,4 +1,5 @@
 import { yellow, green } from 'chalk';
+import { FilePathMatcher } from '../../file-path-matcher';
 
 import { TscError } from '../../tsc-errors';
 import { CliDependencies } from '../cli-dependencies';
@@ -6,6 +7,7 @@ import { ReportResult } from './report-result';
 
 export function reportLooselyTypeCheckedFilePathsWithoutErrors(
   { log, cliOptions }: Pick<CliDependencies, 'log' | 'cliOptions'>,
+  looselyTypeCheckedFilePathMatcher: FilePathMatcher,
   looselyTypeCheckedFilePaths: Set<string>,
   tscErrors: TscError[],
 ): ReportResult {
@@ -13,13 +15,8 @@ export function reportLooselyTypeCheckedFilePathsWithoutErrors(
     return;
   }
 
-  const filePathsWithErrors = new Set(
-    tscErrors.map((tscError) => tscError.filePath),
-  );
-
-  const looselyTypeCheckedFilePathsWithoutErrors = Array.from(
-    looselyTypeCheckedFilePaths,
-  ).filter((filePath) => !filePathsWithErrors.has(filePath));
+  const looselyTypeCheckedFilePathsWithoutErrors =
+    looselyTypeCheckedFilePathMatcher.getUnusedFilePaths();
 
   if (looselyTypeCheckedFilePathsWithoutErrors.length === 0) {
     return;
