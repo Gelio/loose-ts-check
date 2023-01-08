@@ -21,15 +21,15 @@ export function updateLooselyTypeCheckedFilePaths(
 
   log('Updating the list of loosely type-checked files...');
 
-  try {
-    saveJSONFile(
-      cliOptions['loosely-type-checked-files'],
-      Array.from(updatedLooselyTypeCheckedFilePaths).sort(),
-    );
+  const error = saveJSONFile(
+    cliOptions['loosely-type-checked-files'],
+    Array.from(updatedLooselyTypeCheckedFilePaths).sort(),
+  );
 
-    log('The list of loosely type-checked files updated successfully');
-  } catch (error) {
+  if (error) {
     log('Error when saving the list of loosely type-checked files');
     log(error.message);
+  } else {
+    log('The list of loosely type-checked files updated successfully');
   }
 }
