@@ -1,3 +1,4 @@
+import { FilePathMatcher } from '../../file-path-matcher';
 import { getDefaultCliOptions } from '../get-default-cli-options';
 import { reportLooselyTypeCheckedFilePathsWithoutErrors } from './report-loosely-type-checked-file-paths-without-errors';
 
@@ -12,6 +13,7 @@ describe('reportLooselyTypeCheckedFilePathsWithoutErrors', () => {
   it('should not fail when there are no errors', () => {
     const result = reportLooselyTypeCheckedFilePathsWithoutErrors(
       dependencies,
+      new FilePathMatcher([]),
       new Set(),
       [],
     );
@@ -20,8 +22,12 @@ describe('reportLooselyTypeCheckedFilePathsWithoutErrors', () => {
   });
 
   it('should not fail when all loosely type-checked files have errors', () => {
+    const pathMatcher = new FilePathMatcher(['a']);
+    pathMatcher.matches('a');
+
     const result = reportLooselyTypeCheckedFilePathsWithoutErrors(
       dependencies,
+      pathMatcher,
       new Set(['a']),
       [
         {
@@ -41,7 +47,8 @@ describe('reportLooselyTypeCheckedFilePathsWithoutErrors', () => {
   });
 
   it('should remove loosely type-checked paths when they have no errors', () => {
-    const looselyTypeCheckedPaths = new Set(['a', 'b', 'c', 'd']);
+    const looselyTypeCheckedPathsArray = ['a', 'b', 'c', 'd'];
+    const looselyTypeCheckedPaths = new Set(looselyTypeCheckedPathsArray);
 
     const temporaryDependencies: typeof dependencies = {
       ...dependencies,
@@ -50,9 +57,13 @@ describe('reportLooselyTypeCheckedFilePathsWithoutErrors', () => {
         'auto-update': true,
       },
     };
+    const pathMatcher = new FilePathMatcher(looselyTypeCheckedPathsArray);
+    pathMatcher.matches('a');
+    pathMatcher.matches('b');
 
     const result = reportLooselyTypeCheckedFilePathsWithoutErrors(
       temporaryDependencies,
+      pathMatcher,
       looselyTypeCheckedPaths,
       [
         {

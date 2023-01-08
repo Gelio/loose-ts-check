@@ -1,9 +1,10 @@
+import { FilePathMatcher } from '../file-path-matcher';
 import { partitionTscErrors } from './partition-tsc-errors';
 import { TscError } from './types';
 
 describe('partitionTscErrors', () => {
   it('should partition errors based on passed in Sets', () => {
-    const looselyTypeCheckedFilePaths = new Set(['loose-a', 'loose-b']);
+    const looselyTypeCheckedFilePaths = ['loose-a', 'loose-b'];
     const ignoredErrorCodes = new Set(['TS1234', 'TS1235']);
     const ignoredTscErrors: TscError[] = [
       {
@@ -40,7 +41,9 @@ describe('partitionTscErrors', () => {
         ...validTscErrors,
       ],
       ignoredErrorCodes,
-      looselyTypeCheckedFilePaths,
+      looselyTypeCheckedFilePathMatcher: new FilePathMatcher(
+        looselyTypeCheckedFilePaths,
+      ),
     });
 
     expect(result.ignoredTscErrors).toEqual(ignoredTscErrors);

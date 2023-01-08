@@ -44,6 +44,7 @@ function getTestDirPaths({
 }
 
 const looseTsCheckBinaryPath = join(process.cwd(), 'bin', 'loose-ts-check');
+const looseTsCheckCommand = `FORCE_COLOR=0 ${looseTsCheckBinaryPath}`;
 
 const tsVersions = process.env.ONLY_LATEST_VERSION
   ? ['latest']
@@ -94,7 +95,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath} --init`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand} --init`,
       { cwd: testDirPath },
     );
 
@@ -113,7 +114,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath} --auto-update`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand} --auto-update`,
       { cwd: testDirPath },
     );
 
@@ -132,7 +133,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath}`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand}`,
       { cwd: testDirPath },
     );
   });
@@ -151,7 +152,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath}`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand}`,
       { cwd: testDirPath },
     );
   });
@@ -169,7 +170,7 @@ for (const tsVersion of tsVersions) {
 
     const { error, stdout } = await runCommand(
       // TODO: do not use pipe so tests can run on Windows too
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath}`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand}`,
       { cwd: testDirPath },
     );
     expect(error).toBeDefined();
@@ -194,7 +195,7 @@ for (const tsVersion of tsVersions) {
     });
 
     await runCommandExpectSuccess(
-      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckBinaryPath}`,
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand}`,
       { cwd: testDirPath },
     );
   });
