@@ -9,6 +9,7 @@
     "test": "jest",
     "test:watch": "npm run test -- --watch",
     "lint:formatting": "prettier --check src",
+    "fix:formatting": "prettier --write src",
     "prepublishOnly": "rm -rf dist && npm run build",
     "prepare": "husky install"
   },
