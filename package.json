@@ -7,6 +7,8 @@
     "build": "tsc -p tsconfig.build.json",
     "type-check": "tsc",
     "test": "jest",
+    "test:unit": "jest src/",
+    "test:integration": "jest test/",
     "test:watch": "npm run test -- --watch",
     "lint:formatting": "prettier --check src",
     "fix:formatting": "prettier --write src",

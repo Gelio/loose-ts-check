@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "types": [],
+    "typeRoots": []
+  },
+  "files": ["file.ts"]
+}
