@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v1.3.0 (2023-01-08)
+
 Features:
 
 - Wildcard support in `loosely-type-checked-files.json`
