@@ -11,8 +11,8 @@
     "test:integration": "jest test/",
     "test:integration:only-latest": "ONLY_LATEST_VERSION=1 jest test/",
     "test:watch": "npm run test -- --watch",
-    "lint:formatting": "prettier --check src",
-    "fix:formatting": "prettier --write src",
+    "lint:formatting": "prettier --check src *.md",
+    "fix:formatting": "prettier --write src *.md",
     "prepublishOnly": "rm -rf dist && npm run build",
     "prepare": "husky install"
   },
