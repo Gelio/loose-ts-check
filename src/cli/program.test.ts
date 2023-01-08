@@ -47,15 +47,11 @@ describe('program', () => {
       expect(result).toBeUndefined();
 
       expect(initCliDependencies.saveJSONFile).toHaveBeenCalledTimes(2);
-      expect(
-        initCliDependencies.saveJSONFile,
-      ).toHaveBeenCalledWith(
+      expect(initCliDependencies.saveJSONFile).toHaveBeenCalledWith(
         initCliDependencies.cliOptions['loosely-type-checked-files'],
         [filePath],
       );
-      expect(
-        initCliDependencies.saveJSONFile,
-      ).toHaveBeenCalledWith(
+      expect(initCliDependencies.saveJSONFile).toHaveBeenCalledWith(
         initCliDependencies.cliOptions['ignored-error-codes'],
         [tsErrorCode],
       );
@@ -80,12 +76,14 @@ describe('program', () => {
       expect(result).toBeUndefined();
 
       expect(initCliDependencies.saveJSONFile).toHaveBeenCalledTimes(2);
-      expect(
-        initCliDependencies.saveJSONFile,
-      ).toHaveBeenCalledWith('files.json', [filePath]);
-      expect(
-        initCliDependencies.saveJSONFile,
-      ).toHaveBeenCalledWith('ignored.json', [tsErrorCode]);
+      expect(initCliDependencies.saveJSONFile).toHaveBeenCalledWith(
+        'files.json',
+        [filePath],
+      );
+      expect(initCliDependencies.saveJSONFile).toHaveBeenCalledWith(
+        'ignored.json',
+        [tsErrorCode],
+      );
     });
   });
 
@@ -338,9 +336,7 @@ describe('program', () => {
 
         expect(result).toBeUndefined();
 
-        expect(
-          temporaryCliDependencies.saveJSONFile,
-        ).toHaveBeenCalledWith(
+        expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
           ['a', 'b', 'c'],
         );
@@ -355,9 +351,7 @@ describe('program', () => {
 
         expect(result).toBeUndefined();
 
-        expect(
-          temporaryCliDependencies.saveJSONFile,
-        ).toHaveBeenCalledWith(
+        expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
           ['a'],
         );
@@ -372,9 +366,7 @@ describe('program', () => {
 
         expect(result).toBeUndefined();
 
-        expect(
-          temporaryCliDependencies.saveJSONFile,
-        ).toHaveBeenCalledWith(
+        expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['ignored-error-codes'],
           ['TS1111'],
         );
@@ -395,9 +387,7 @@ describe('program', () => {
 
         expect(result?.error).toBe(true);
 
-        expect(
-          temporaryCliDependencies.saveJSONFile,
-        ).toHaveBeenCalledWith(
+        expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
           ['file that has ignored error', 'new file that has an ignored error'],
         );
@@ -417,9 +407,7 @@ describe('program', () => {
 
         expect(result).toBeUndefined();
 
-        expect(
-          temporaryCliDependencies.saveJSONFile,
-        ).toHaveBeenCalledWith(
+        expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
           ['file that has ignored error', 'new file that has an ignored error'],
         );

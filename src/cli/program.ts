@@ -29,10 +29,8 @@ export const program = (
     return { error: true };
   }
 
-  const {
-    ignoredErrorCodesArray,
-    looselyTypeCheckedFilePathsArray,
-  } = readResult;
+  const { ignoredErrorCodesArray, looselyTypeCheckedFilePathsArray } =
+    readResult;
 
   const ignoredErrorCodes: ReadonlySet<string> = new Set<string>(
     ignoredErrorCodesArray,

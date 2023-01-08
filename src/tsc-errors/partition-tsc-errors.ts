@@ -18,11 +18,9 @@ export const partitionTscErrors = ({
       ignoredErrorCodes.has(tscError.tscErrorCode),
   );
 
-  const [
-    tscErrorsThatCouldBeIgnored,
-    validTscErrors,
-  ] = partition(unignoredTscErrors, (tscError) =>
-    ignoredErrorCodes.has(tscError.tscErrorCode),
+  const [tscErrorsThatCouldBeIgnored, validTscErrors] = partition(
+    unignoredTscErrors,
+    (tscError) => ignoredErrorCodes.has(tscError.tscErrorCode),
   );
 
   return {

@@ -69,7 +69,8 @@ app/pages/site/site-tests/site-tests.tsx(33,19): error TS2322: Type 'REQUEST_STA
   });
 
   it('should not add final whitespace to rawErrorLines', () => {
-    const tscOutput = `app/common/components/card/card.tsx(94,15): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+    const tscOutput =
+      `app/common/components/card/card.tsx(94,15): error TS2722: Cannot invoke an object which is possibly 'undefined'.
 
 
 

@@ -13,10 +13,8 @@ export function initializeConfigurationFiles(
 ) {
   log('Initializing configuration files...');
 
-  const {
-    looselyTypeCheckedFiles,
-    ignoredErrorCodes,
-  } = getConfigFilesFromErrors(tscErrors);
+  const { looselyTypeCheckedFiles, ignoredErrorCodes } =
+    getConfigFilesFromErrors(tscErrors);
 
   const saveLooselyTypeCheckedFilesError = saveJSONFile(
     cliOptions['loosely-type-checked-files'],
