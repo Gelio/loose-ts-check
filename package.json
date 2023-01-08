@@ -9,6 +9,7 @@
     "test": "jest",
     "test:unit": "jest src/",
     "test:integration": "jest test/",
+    "test:integration:only-latest": "ONLY_LATEST_VERSION=1 jest test/",
     "test:watch": "npm run test -- --watch",
     "lint:formatting": "prettier --check src",
     "fix:formatting": "prettier --write src",
