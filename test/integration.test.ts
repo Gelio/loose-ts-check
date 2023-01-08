@@ -199,4 +199,23 @@ for (const tsVersion of tsVersions) {
       { cwd: testDirPath },
     );
   });
+
+  test(`"wildcard-paths-auto-update" works with TS ${tsVersion}`, async () => {
+    const { testSourceDirPath, testDirPath } = getTestDirPaths({
+      testDirName: 'wildcard-paths-auto-update',
+      tsVersion,
+    });
+    await prepareTestDirectory({
+      testSourceDirPath,
+      testDirPath,
+      tsVersion,
+    });
+
+    await runCommandExpectSuccess(
+      `./node_modules/.bin/tsc --noEmit | ${looseTsCheckCommand} --auto-update`,
+      { cwd: testDirPath },
+    );
+
+    await diffExpectedConfigFiles(testDirPath);
+  });
 }
