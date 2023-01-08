@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Maintenance work (update npm packages, use newer Node versions in CI).
+
 ## v1.2.0 (2020-11-19)
 
 Features:

@@ -16,15 +16,15 @@ export function updateIgnoredErrorCodes(
 
   log('Updating the list of ignored error codes...');
 
-  try {
-    saveJSONFile(
-      cliOptions['ignored-error-codes'],
-      Array.from(updatedIgnoredErrorCodes).sort(),
-    );
+  const error = saveJSONFile(
+    cliOptions['ignored-error-codes'],
+    Array.from(updatedIgnoredErrorCodes).sort(),
+  );
 
-    log('The list of ignored error codes updated successfully');
-  } catch (error) {
+  if (error) {
     log('Error when saving the list of ignored error codes');
     log(error.message);
+  } else {
+    log('The list of ignored error codes updated successfully');
   }
 }

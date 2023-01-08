@@ -10,7 +10,7 @@ import {
 
 const options: CliOptions = yargs(process.argv)
   .options(cliOptionsConfig)
-  .parse();
+  .parseSync();
 const cliDependencies = getCliDependencies(options);
 
 getProgramInput()

@@ -11,12 +11,8 @@ export const readConfig = ({
     cliOptions['ignored-error-codes'],
     cliOptions.init,
   );
-  const looselyTypeCheckedFilePathsArray:
-    | readonly string[]
-    | Error = readJSONArray(
-    cliOptions['loosely-type-checked-files'],
-    cliOptions.init,
-  );
+  const looselyTypeCheckedFilePathsArray: readonly string[] | Error =
+    readJSONArray(cliOptions['loosely-type-checked-files'], cliOptions.init);
 
   if (
     !Array.isArray(ignoredErrorCodesArray) ||

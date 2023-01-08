@@ -2,12 +2,11 @@ import { getDefaultCliOptions } from '../get-default-cli-options';
 import { reportTscErrorsThatCouldBeIgnored } from './report-tsc-errors-that-could-be-ignored';
 
 describe('reportTscErrorsThatCouldBeIgnored', () => {
-  const dependencies: Parameters<
-    typeof reportTscErrorsThatCouldBeIgnored
-  >[0] = {
-    cliOptions: getDefaultCliOptions(),
-    log: jest.fn(),
-  };
+  const dependencies: Parameters<typeof reportTscErrorsThatCouldBeIgnored>[0] =
+    {
+      cliOptions: getDefaultCliOptions(),
+      log: jest.fn(),
+    };
 
   beforeEach(() => {
     jest.resetAllMocks();
