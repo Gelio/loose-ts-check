@@ -134,6 +134,11 @@ tsc | npx loose-ts-check
 
 instead of `tsc` to do type-checking.
 
+## IDE plugin
+
+In case you want to have the errors ignored in your IDE as well, use
+[loose-ts-check-plugin](https://github.com/nwetzel22/loose-ts-check-plugin).
+
 ## Development
 
 To verify the correctness, run:
