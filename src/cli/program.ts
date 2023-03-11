@@ -1,130 +1,128 @@
-import * as chalk from 'chalk';
 import { FilePathMatcher } from '../file-path-matcher';
-
-import {
-  parseTscErrors,
-  partitionTscErrors,
-  validateTscErrorCodes,
-} from '../tsc-errors';
+import processCompilationResults, {
+  ProcessCompilateResultsInput,
+} from '../process-compilation-results';
+import classifyTscError from '../tsc-errors/classify-tsc-error';
+import { parseTscLine } from '../tsc-errors/parse-tsc-line';
+import { TscError } from '../tsc-errors/types';
+import { validateTscErrorCodes } from '../tsc-errors/validate-error-codes';
 import { CliDependencies } from './cli-dependencies';
-import {
-  initializeConfigurationFiles,
-  readConfig,
-  updateIgnoredErrorCodes,
-  updateLooselyTypeCheckedFilePaths,
-} from './config';
-import {
-  aggregateReportingResults,
-  reportIgnoredErrorsThatDidNotOccur,
-  reportLooselyTypeCheckedFilePathsWithoutErrors,
-  reportTscErrorsThatCouldBeIgnored,
-  reportValidTscErrors,
-} from './reporting';
+import { readConfig } from './config/read-config';
+import WatchModeSpy from '../watch-mode-spy';
+import ErrorStore from '../tsc-errors/error-store';
 
-export const program = (
-  cliDependencies: CliDependencies,
-  programInput: string[],
-): { error: true } | undefined => {
-  const readResult = readConfig(cliDependencies);
-  if (!readResult) {
-    return { error: true };
+export class Program {
+  private readonly cliDependencies: CliDependencies;
+  private readonly errorStore = new ErrorStore();
+  private readonly watchModeSpy = new WatchModeSpy();
+  private lastTscError: TscError | undefined;
+  private looselyTypeCheckedFilePathsArray: string[];
+  private looselyTypeCheckedFilePathMatcher: FilePathMatcher;
+  private ignoredErrorCodes: ReadonlySet<string>;
+
+  constructor(cliDependencies: CliDependencies) {
+    this.cliDependencies = cliDependencies;
+    const configResources = this.buildConfigResources();
+    this.looselyTypeCheckedFilePathsArray =
+      configResources.looselyTypeCheckedFilePathsArray;
+    this.looselyTypeCheckedFilePathMatcher =
+      configResources.looselyTypeCheckedFilePathMatcher;
+    this.ignoredErrorCodes = configResources.ignoredErrorCodes;
   }
 
-  const { ignoredErrorCodesArray, looselyTypeCheckedFilePathsArray } =
-    readResult;
+  private buildConfigResources(): {
+    looselyTypeCheckedFilePathsArray: string[];
+    looselyTypeCheckedFilePathMatcher: FilePathMatcher;
+    ignoredErrorCodes: ReadonlySet<string>;
+  } {
+    const readResult = readConfig(this.cliDependencies);
+    if (!readResult) {
+      throw new Error();
+    }
 
-  const ignoredErrorCodes: ReadonlySet<string> = new Set<string>(
-    ignoredErrorCodesArray,
-  );
+    const { ignoredErrorCodesArray, looselyTypeCheckedFilePathsArray } =
+      readResult;
 
-  const validationErrors = validateTscErrorCodes(ignoredErrorCodes);
-  if (validationErrors.length > 0) {
-    cliDependencies.log(
-      `Invalid TSC error codes in ${cliDependencies.cliOptions['ignored-error-codes']}`,
+    const ignoredErrorCodes = new Set<string>(ignoredErrorCodesArray);
+
+    const validationErrors = validateTscErrorCodes(ignoredErrorCodes);
+
+    if (validationErrors.length > 0) {
+      this.cliDependencies.log(
+        `Invalid TSC error codes in ${this.cliDependencies.cliOptions['ignored-error-codes']}`,
+      );
+      validationErrors.forEach(this.cliDependencies.log);
+      throw new Error();
+    }
+
+    const looselyTypeCheckedFilePathMatcher = new FilePathMatcher(
+      looselyTypeCheckedFilePathsArray,
     );
-    validationErrors.forEach(cliDependencies.log);
 
-    return { error: true };
-  }
-
-  const looselyTypeCheckedFilePathMatcher = new FilePathMatcher(
-    looselyTypeCheckedFilePathsArray,
-  );
-
-  const tscErrors = parseTscErrors(programInput);
-
-  if (tscErrors.length === 0) {
-    cliDependencies.log(chalk.green('No TSC errors detected'));
-    return;
-  }
-
-  cliDependencies.log(`${chalk.red(tscErrors.length)} errors detected`);
-
-  if (cliDependencies.cliOptions.init) {
-    initializeConfigurationFiles(cliDependencies, tscErrors);
-    return;
-  }
-
-  const {
-    ignoredTscErrors,
-    unignoredTscErrors,
-    tscErrorsThatCouldBeIgnored,
-    validTscErrors,
-  } = partitionTscErrors({
-    tscErrors,
-    ignoredErrorCodes,
-    looselyTypeCheckedFilePathMatcher,
-  });
-
-  cliDependencies.log(
-    `${chalk.yellow(ignoredTscErrors.length)} errors have been ignored`,
-  );
-
-  if (unignoredTscErrors.length > 0) {
-    cliDependencies.log(
-      `${chalk.red(unignoredTscErrors.length)} errors were not ignored`,
-    );
-  }
-
-  const updatedLooselyTypeCheckedFilePaths = new Set(
-    looselyTypeCheckedFilePathsArray,
-  );
-  const updatedIgnoredErrorCodes = new Set(ignoredErrorCodes);
-
-  const reportingResult = aggregateReportingResults([
-    reportTscErrorsThatCouldBeIgnored(
-      cliDependencies,
-      tscErrorsThatCouldBeIgnored,
-      updatedLooselyTypeCheckedFilePaths,
-    ),
-    reportLooselyTypeCheckedFilePathsWithoutErrors(
-      cliDependencies,
+    return {
+      looselyTypeCheckedFilePathsArray,
       looselyTypeCheckedFilePathMatcher,
-      updatedLooselyTypeCheckedFilePaths,
-      tscErrors,
-    ),
-    reportValidTscErrors(cliDependencies, validTscErrors),
-    reportIgnoredErrorsThatDidNotOccur(
-      cliDependencies,
-      tscErrors,
-      updatedIgnoredErrorCodes,
-    ),
-  ]);
-
-  if (cliDependencies.cliOptions['auto-update']) {
-    updateLooselyTypeCheckedFilePaths(
-      cliDependencies,
-      new Set(looselyTypeCheckedFilePathsArray),
-      updatedLooselyTypeCheckedFilePaths,
-    );
-    updateIgnoredErrorCodes(
-      cliDependencies,
       ignoredErrorCodes,
-      updatedIgnoredErrorCodes,
-    );
+    };
   }
 
-  if (reportingResult?.shouldFail) {
-    return { error: true };
+  private buildCompilationResultsInput(): ProcessCompilateResultsInput {
+    return {
+      cliDependencies: this.cliDependencies,
+      looselyTypeCheckedFilePathsArray: this.looselyTypeCheckedFilePathsArray,
+      looselyTypeCheckedFilePathMatcher: this.looselyTypeCheckedFilePathMatcher,
+      ignoredErrorCodes: this.ignoredErrorCodes,
+      tscErrors: this.errorStore.getAllErrors(),
+      ignoredTscErrors: this.errorStore.getIgnoredErrors(),
+      reportedTscErrors: this.errorStore.getReportedErrors(),
+      validTscErrors: this.errorStore.getValidErrors(),
+      tscErrorsThatCouldBeIgnored: this.errorStore.getCouldBeIgnoredErrors(),
+    };
   }
-};
+
+  public processLine(line: string): void {
+    if (this.watchModeSpy.detectWatchModeCompilationStartOutput(line)) {
+      this.cliDependencies.log(
+        this.watchModeSpy.watchModeCompilationStartOuput,
+      );
+      return;
+    }
+
+    if (this.watchModeSpy.detectWatchModeCompilationFinishedOutput(line)) {
+      const compilationResultsInput = this.buildCompilationResultsInput();
+      processCompilationResults(compilationResultsInput);
+      this.cliDependencies.log(this.watchModeSpy.watchModeCompilationEndOutput);
+      return;
+    }
+
+    if (this.watchModeSpy.detectWatchModeFileChangeDetectedOutput(line)) {
+      this.cliDependencies.log(
+        this.watchModeSpy.watchModeFileChangeDetectedOutput,
+      );
+
+      this.lastTscError = undefined;
+      this.errorStore.reset();
+    }
+
+    const tscError = parseTscLine(line, this.lastTscError);
+
+    if (tscError !== this.lastTscError) {
+      const errorClassification = classifyTscError(
+        tscError as TscError,
+        this.ignoredErrorCodes,
+        this.looselyTypeCheckedFilePathMatcher,
+      );
+
+      this.errorStore.pushError(tscError as TscError, errorClassification);
+    }
+
+    this.lastTscError = tscError;
+  }
+
+  public finish(): { error: boolean } | undefined {
+    if (!this.watchModeSpy.watchModeDetected()) {
+      const compilationResultsInput = this.buildCompilationResultsInput();
+      return processCompilationResults(compilationResultsInput);
+    }
+  }
+}

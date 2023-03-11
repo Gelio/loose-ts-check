@@ -13,7 +13,7 @@ export const readJSONArray = (
       return [];
     }
 
-    return new Error(`Cannot read file ${path}: ${(error as Error).message}`);
+    return new Error(`Cannot read file ${path}: ${(error as Error).message}.`);
   }
 
   let parsedFile: unknown;
@@ -21,12 +21,12 @@ export const readJSONArray = (
     parsedFile = JSON.parse(fileContent);
   } catch (error) {
     return new Error(
-      `Cannot parse JSON file ${path}: ${(error as Error).message}`,
+      `Cannot parse JSON file ${path}: ${(error as Error).message}.`,
     );
   }
 
   if (!Array.isArray(parsedFile)) {
-    return new Error(`File ${path} is not a valid array`);
+    return new Error(`File ${path} is not a valid array.`);
   }
 
   return parsedFile;

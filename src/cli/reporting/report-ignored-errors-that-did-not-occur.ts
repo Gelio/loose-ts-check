@@ -23,7 +23,7 @@ export const reportIgnoredErrorsThatDidNotOccur = (
   log(
     `${yellow(
       tscErrorCodesThatDidNotOccur.length,
-    )} currently ignored error codes did not occur`,
+    )} currently ignored error codes did not occur.`,
   );
 
   if (!cliOptions['auto-update']) {
@@ -38,5 +38,5 @@ export const reportIgnoredErrorsThatDidNotOccur = (
   tscErrorCodesThatDidNotOccur.forEach((tscErrorCode) => {
     ignoredErrorCodes.delete(tscErrorCode);
   });
-  log('Registry will be updated');
+  log('Registry will be updated.');
 };

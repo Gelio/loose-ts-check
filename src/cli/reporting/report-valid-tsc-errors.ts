@@ -15,7 +15,7 @@ export function reportValidTscErrors(
   log(
     `${red(
       validTscErrors.length,
-    )} errors could not be ignored as those codes are not in the ignored list`,
+    )} errors could not be ignored as those codes are not in the ignored list.`,
   );
 
   validTscErrors.forEach((error) => log(error.rawErrorLines.join('\n')));

@@ -11,6 +11,6 @@ export const saveJSONFile = (
       return error;
     }
 
-    return new Error('Unknown error while saving JSON');
+    return new Error('Unknown error while saving JSON.');
   }
 };

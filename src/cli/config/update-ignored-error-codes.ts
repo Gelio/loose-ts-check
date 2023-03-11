@@ -22,9 +22,9 @@ export function updateIgnoredErrorCodes(
   );
 
   if (error) {
-    log('Error when saving the list of ignored error codes');
+    log('Error when saving the list of ignored error codes.');
     log(error.message);
   } else {
-    log('The list of ignored error codes updated successfully');
+    log('The list of ignored error codes updated successfully.');
   }
 }
