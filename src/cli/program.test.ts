@@ -1,9 +1,10 @@
 import * as chalk from 'chalk';
 import { getDefaultCliOptions } from './get-default-cli-options';
-import { program } from './program';
+import { Program } from './program';
+import { CliDependencies } from './cli-dependencies';
 
 describe('program', () => {
-  const cliDependencies: Parameters<typeof program>[0] = {
+  const cliDependencies: CliDependencies = {
     cliOptions: getDefaultCliOptions(),
     log: jest.fn(),
     readJSONArray: jest.fn(),
@@ -30,22 +31,22 @@ describe('program', () => {
     };
 
     it('should not initialize when no errors', () => {
-      const result = program(initCliDependencies, ['', '']);
+      const program = new Program(initCliDependencies);
+      const result = program.finish();
 
       expect(result).toBeUndefined();
-
       expect(initCliDependencies.saveJSONFile).toHaveBeenCalledTimes(0);
     });
 
-    it('should initialize when there are errors errors', () => {
+    it('should initialize when there are errors', () => {
       const filePath = 'app/pages/site/site-pipelines/new.ts';
       const tsErrorCode = 'TS2532';
-      const result = program(initCliDependencies, [
-        createErrorLine(filePath, tsErrorCode),
-      ]);
+
+      const program = new Program(initCliDependencies);
+      program.processLine(createErrorLine(filePath, tsErrorCode));
+      const result = program.finish();
 
       expect(result).toBeUndefined();
-
       expect(initCliDependencies.saveJSONFile).toHaveBeenCalledTimes(2);
       expect(initCliDependencies.saveJSONFile).toHaveBeenCalledWith(
         initCliDependencies.cliOptions['loosely-type-checked-files'],
@@ -69,12 +70,12 @@ describe('program', () => {
 
       const filePath = 'app/pages/site/site-pipelines/new.ts';
       const tsErrorCode = 'TS2532';
-      const result = program(temporaryCliDependencies, [
-        createErrorLine(filePath, tsErrorCode),
-      ]);
+
+      const program = new Program(temporaryCliDependencies);
+      program.processLine(createErrorLine(filePath, tsErrorCode));
+      const result = program.finish();
 
       expect(result).toBeUndefined();
-
       expect(initCliDependencies.saveJSONFile).toHaveBeenCalledTimes(2);
       expect(initCliDependencies.saveJSONFile).toHaveBeenCalledWith(
         'files.json',
@@ -90,15 +91,13 @@ describe('program', () => {
   describe('when reading existing config', () => {
     it('should reading/parsing log errors', () => {
       (cliDependencies.readJSONArray as jest.Mock)
-        .mockImplementationOnce(() => new Error('Cannot parse array'))
-        .mockImplementationOnce(() => new Error('Cannot parse another array'));
+        .mockImplementationOnce(() => new Error('Cannot parse array.'))
+        .mockImplementationOnce(() => new Error('Cannot parse another array.'));
 
-      const result = program(cliDependencies, ['']);
-
-      expect(result?.error).toBe(true);
-      expect(cliDependencies.log).toHaveBeenCalledWith('Cannot parse array');
+      expect(() => new Program(cliDependencies)).toThrowError();
+      expect(cliDependencies.log).toHaveBeenCalledWith('Cannot parse array.');
       expect(cliDependencies.log).toHaveBeenCalledWith(
-        'Cannot parse another array',
+        'Cannot parse another array.',
       );
     });
 
@@ -113,9 +112,8 @@ describe('program', () => {
       };
       (cliDependencies.readJSONArray as jest.Mock).mockImplementation(() => []);
 
-      const result = program(temporaryCliDependencies, ['']);
+      new Program(temporaryCliDependencies);
 
-      expect(result).toBeUndefined();
       expect(cliDependencies.readJSONArray).toHaveBeenCalledWith(
         'ignored.json',
         false,
@@ -135,16 +133,15 @@ describe('program', () => {
           : [],
     );
 
-    const result = program(cliDependencies, ['']);
-
-    expect(result?.error).toBe(true);
+    expect(() => new Program(cliDependencies)).toThrowError();
     expect(cliDependencies.log).toHaveBeenCalledWith(
       expect.stringContaining('Invalid TSC error codes'),
     );
   });
 
   it('should succeed if there are no TSC errors in the input', () => {
-    const result = program(cliDependencies, ['']);
+    const program = new Program(cliDependencies);
+    const result = program.finish();
 
     expect(result).toBeUndefined();
     expect(cliDependencies.log).toHaveBeenCalledWith(
@@ -167,12 +164,18 @@ describe('program', () => {
     it('should report the number of all errors', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
-      const result = program(cliDependencies, [
+
+      const program = new Program(cliDependencies);
+      const errors = [
         createErrorLine('a', 'TS1234'),
         createErrorLine('a', 'TS1597'),
         createErrorLine('c', 'TS1111'),
         createErrorLine('c', 'TS1234'),
-      ]);
+      ];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
@@ -183,28 +186,40 @@ describe('program', () => {
     it('should report the number of ignored errors', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
-      const result = program(cliDependencies, [
+
+      const program = new Program(cliDependencies);
+      const errors = [
         createErrorLine('a', 'TS1234'),
         createErrorLine('a', 'TS1597'),
         createErrorLine('c', 'TS1111'),
         createErrorLine('c', 'TS1234'),
-      ]);
+      ];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
-        expect.stringContaining('1 errors have been ignored'),
+        expect.stringContaining('1 errors have been ignored.'),
       );
     });
 
     it('should report the number of unignored errors', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
-      const result = program(cliDependencies, [
+
+      const program = new Program(cliDependencies);
+      const errors = [
         createErrorLine('a', 'TS1234'),
         createErrorLine('a', 'TS1597'),
         createErrorLine('c', 'TS1111'),
         createErrorLine('c', 'TS1234'),
-      ]);
+      ];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
@@ -215,12 +230,18 @@ describe('program', () => {
     it('should report the number of errors that could be ignored', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
-      const result = program(cliDependencies, [
+
+      const program = new Program(cliDependencies);
+      const errors = [
         createErrorLine('a', 'TS1234'),
         createErrorLine('a', 'TS1597'),
         createErrorLine('c', 'TS1111'),
         createErrorLine('c', 'TS1234'),
-      ]);
+      ];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
@@ -231,13 +252,19 @@ describe('program', () => {
     it('should display the errors that could be ignored', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
-      const result = program(cliDependencies, [
+
+      const program = new Program(cliDependencies);
+      const errors = [
         createErrorLine('a', 'TS1234'),
         createErrorLine('a', 'TS1597'),
         createErrorLine('c', 'TS1111'),
         createErrorLine('c', 'TS1234'),
         createErrorLine('d', 'TS1234'),
-      ]);
+      ];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
@@ -251,17 +278,23 @@ describe('program', () => {
     it('should report the number of files that no longer have to be ignored', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
-      const result = program(cliDependencies, [
+
+      const program = new Program(cliDependencies);
+      const errors = [
         createErrorLine('a', 'TS1234'),
         createErrorLine('a', 'TS1597'),
         createErrorLine('c', 'TS1111'),
         createErrorLine('c', 'TS1234'),
-      ]);
+      ];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
         expect.stringContaining(
-          '1 loosely type-checked files no longer have any errors and could be strictly type-checked',
+          '1 loosely type-checked files no longer have any errors and could be strictly type-checked.',
         ),
       );
     });
@@ -269,17 +302,23 @@ describe('program', () => {
     it('should report the number valid TSC errors', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
-      const result = program(cliDependencies, [
+
+      const program = new Program(cliDependencies);
+      const errors = [
         createErrorLine('a', 'TS1234'),
         createErrorLine('a', 'TS1597'),
         createErrorLine('c', 'TS1111'),
         createErrorLine('c', 'TS1234'),
-      ]);
+      ];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
         expect.stringContaining(
-          '2 errors could not be ignored as those codes are not in the ignored list',
+          '2 errors could not be ignored as those codes are not in the ignored list.',
         ),
       );
     });
@@ -287,12 +326,18 @@ describe('program', () => {
     it('should display valid TSC errors', () => {
       looselyTypeCheckedFiles = ['a', 'b'];
       ignoredErrorCodes = ['TS1234'];
-      const result = program(cliDependencies, [
+
+      const program = new Program(cliDependencies);
+      const errors = [
         createErrorLine('a', 'TS1234'),
         createErrorLine('a', 'TS1597'),
         createErrorLine('c', 'TS1111'),
         createErrorLine('c', 'TS1234'),
-      ]);
+      ];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result?.error).toBe(true);
       expect(cliDependencies.log).toHaveBeenCalledWith(
@@ -306,7 +351,13 @@ describe('program', () => {
     it('should report the number of ignored errors that did not occur', () => {
       looselyTypeCheckedFiles = ['a'];
       ignoredErrorCodes = ['TS1111', 'TS2222', 'TS3333'];
-      const result = program(cliDependencies, [createErrorLine('a', 'TS1111')]);
+
+      const program = new Program(cliDependencies);
+      const errors = [createErrorLine('a', 'TS1111')];
+      for (let error of errors) {
+        program.processLine(error);
+      }
+      const result = program.finish();
 
       expect(result).toBeUndefined();
       expect(cliDependencies.log).toHaveBeenCalledWith(
@@ -328,14 +379,19 @@ describe('program', () => {
       it('should add new loosely type-checked files whose errors can be ignored', () => {
         looselyTypeCheckedFiles = ['a', 'b'];
         ignoredErrorCodes = ['TS1111', 'TS2222'];
-        const result = program(temporaryCliDependencies, [
+
+        const program = new Program(temporaryCliDependencies);
+        const errors = [
           createErrorLine('a', 'TS1111'),
           createErrorLine('b', 'TS1111'),
           createErrorLine('c', 'TS2222'),
-        ]);
+        ];
+        for (let error of errors) {
+          program.processLine(error);
+        }
+        const result = program.finish();
 
         expect(result).toBeUndefined();
-
         expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
           ['a', 'b', 'c'],
@@ -345,12 +401,15 @@ describe('program', () => {
       it('should remove loosely type-checked file paths that have no errors', () => {
         looselyTypeCheckedFiles = ['a', 'b'];
         ignoredErrorCodes = ['TS1111'];
-        const result = program(temporaryCliDependencies, [
-          createErrorLine('a', 'TS1111'),
-        ]);
+
+        const program = new Program(temporaryCliDependencies);
+        const errors = [createErrorLine('a', 'TS1111')];
+        for (let error of errors) {
+          program.processLine(error);
+        }
+        const result = program.finish();
 
         expect(result).toBeUndefined();
-
         expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
           ['a'],
@@ -360,12 +419,15 @@ describe('program', () => {
       it('should remove error codes that did not occur', () => {
         looselyTypeCheckedFiles = ['a'];
         ignoredErrorCodes = ['TS1111', 'TS2222'];
-        const result = program(temporaryCliDependencies, [
-          createErrorLine('a', 'TS1111'),
-        ]);
+
+        const program = new Program(temporaryCliDependencies);
+        const errors = [createErrorLine('a', 'TS1111')];
+        for (let error of errors) {
+          program.processLine(error);
+        }
+        const result = program.finish();
 
         expect(result).toBeUndefined();
-
         expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['ignored-error-codes'],
           ['TS1111'],
@@ -379,14 +441,19 @@ describe('program', () => {
           'new file that has an ignored error',
         ];
         ignoredErrorCodes = ['TS1111'];
-        const result = program(temporaryCliDependencies, [
+
+        const program = new Program(temporaryCliDependencies);
+        const errors = [
           createErrorLine('file that has ignored error', 'TS1111'),
           createErrorLine('new file that has an ignored error', 'TS1111'),
           createErrorLine('new file that has a new error', 'TS2222'),
-        ]);
+        ];
+        for (let error of errors) {
+          program.processLine(error);
+        }
+        const result = program.finish();
 
         expect(result?.error).toBe(true);
-
         expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
           ['file that has ignored error', 'new file that has an ignored error'],
@@ -400,13 +467,18 @@ describe('program', () => {
           'new file that has an ignored error',
         ];
         ignoredErrorCodes = ['TS1111'];
-        const result = program(temporaryCliDependencies, [
+
+        const program = new Program(temporaryCliDependencies);
+        const errors = [
           createErrorLine('file that has ignored error', 'TS1111'),
           createErrorLine('new file that has an ignored error', 'TS1111'),
-        ]);
+        ];
+        for (let error of errors) {
+          program.processLine(error);
+        }
+        const result = program.finish();
 
         expect(result).toBeUndefined();
-
         expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
           temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
           ['file that has ignored error', 'new file that has an ignored error'],

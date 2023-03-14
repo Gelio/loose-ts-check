@@ -45,5 +45,5 @@ export function reportLooselyTypeCheckedFilePathsWithoutErrors(
   looselyTypeCheckedFilePathsWithoutErrors.forEach((filePath) => {
     looselyTypeCheckedFilePaths.delete(filePath);
   });
-  log('Registry will be updated');
+  log('Registry will be updated.');
 }

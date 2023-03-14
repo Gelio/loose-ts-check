@@ -1,26 +1,34 @@
 import yargs from 'yargs';
+import { createInterface } from 'readline';
 
 import {
   CliOptions,
   cliOptionsConfig,
   getCliDependencies,
-  getProgramInput,
-  program,
+  Program,
 } from './cli';
 
 const options: CliOptions = yargs(process.argv)
   .options(cliOptionsConfig)
   .parseSync();
-const cliDependencies = getCliDependencies(options);
 
-getProgramInput()
-  .then((programInput) => program(cliDependencies, programInput))
-  .then((result) => {
-    if (result?.error) {
-      process.exit(1);
-    }
-  })
-  .catch((error) => {
-    console.error('Unknown error', error);
+const cliDependencies = getCliDependencies(options);
+const rl = createInterface(process.stdin);
+let program: Program;
+
+try {
+  program = new Program(cliDependencies);
+} catch {
+  process.exit(1);
+}
+
+rl.on('line', (line) => {
+  program.processLine(line);
+});
+
+rl.once('close', () => {
+  const result = program.finish();
+  if (result?.error) {
     process.exit(1);
-  });
+  }
+});

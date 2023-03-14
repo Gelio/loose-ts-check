@@ -15,7 +15,7 @@ export function reportTscErrorsThatCouldBeIgnored(
   log(
     `${yellow(
       tscErrorsThatCouldBeIgnored.length,
-    )} errors could be ignored, as their error codes are ignored`,
+    )} errors could be ignored, as their error codes are ignored.`,
   );
 
   tscErrorsThatCouldBeIgnored.forEach((tscError) =>
@@ -45,6 +45,6 @@ export function reportTscErrorsThatCouldBeIgnored(
   log(
     `Additional ${yellow(
       additionalLooselyTypeCheckedFilePaths,
-    )} files will be ignored - registry will be updated`,
+    )} files will be ignored - registry will be updated.`,
   );
 }

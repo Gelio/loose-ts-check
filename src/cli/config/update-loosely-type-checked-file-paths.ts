@@ -27,9 +27,9 @@ export function updateLooselyTypeCheckedFilePaths(
   );
 
   if (error) {
-    log('Error when saving the list of loosely type-checked files');
+    log('Error when saving the list of loosely type-checked files.');
     log(error.message);
   } else {
-    log('The list of loosely type-checked files updated successfully');
+    log('The list of loosely type-checked files updated successfully.');
   }
 }
