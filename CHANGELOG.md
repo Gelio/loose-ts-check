@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+**BREAKING CHANGES**
+
+- `--auto-update` will no longer add new file paths to the registry
+
+  When there were errors that could be ignored because the error code is already
+  ignored in other files, `--auto-update` used to add these new file paths to
+  the registry. This allowed regressions to sneak in, since a file that was
+  already conforming to the stricter config could re-appear in the registry of
+  ignored files.
+
+  In situations like this one, these file paths will be no longer added to the
+  registry, and the program will fail when there are errors in files that could
+  be ignored.
+
+  If you need to start ignoring these errors, use the `--init` flag to
+  regenerate the registries.
+
+  See <https://github.com/Gelio/loose-ts-check/issues/16> for more information.
+
 ## v1.3.0 (2023-01-08)
 
 Features:

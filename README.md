@@ -17,7 +17,7 @@ incrementally, where only some existing files are allowed to have TS errors.
 - ignores specific TS errors from specific files
 - detects files that no longer have to be loosely type-checked
 - auto-updates the loosely type-checked list of files when a file no longer has
-  error
+  errors
 - auto-updates the ignored error codes when there are no errors of that type
 - loosely type-checked files can be specified using globs
 

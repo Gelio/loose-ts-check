@@ -4,9 +4,8 @@ import { CliDependencies } from '../cli-dependencies';
 import { ReportResult } from './report-result';
 
 export function reportTscErrorsThatCouldBeIgnored(
-  { log, cliOptions }: Pick<CliDependencies, 'log' | 'cliOptions'>,
+  { log }: Pick<CliDependencies, 'log'>,
   tscErrorsThatCouldBeIgnored: TscError[],
-  looselyTypeCheckedFilePaths: Set<string>,
 ): ReportResult {
   if (tscErrorsThatCouldBeIgnored.length === 0) {
     return;
@@ -22,29 +21,13 @@ export function reportTscErrorsThatCouldBeIgnored(
     log(tscError.rawErrorLines.join('\n')),
   );
 
-  if (!cliOptions['auto-update']) {
-    log(
-      `Use the ${green(
-        '--auto-update',
-      )} option to update the registry automatically.`,
-    );
-
-    return {
-      shouldFail: true,
-    };
-  }
-
-  const initialLooselyTypeCheckedFilesCount =
-    tscErrorsThatCouldBeIgnored.length;
-  tscErrorsThatCouldBeIgnored.forEach((tscError) => {
-    looselyTypeCheckedFilePaths.add(tscError.filePath);
-  });
-  const additionalLooselyTypeCheckedFilePaths =
-    tscErrorsThatCouldBeIgnored.length - initialLooselyTypeCheckedFilesCount;
-
   log(
-    `Additional ${yellow(
-      additionalLooselyTypeCheckedFilePaths,
-    )} files will be ignored - registry will be updated`,
+    `Use the ${green(
+      '--init',
+    )} option to add these file paths to the registry.`,
   );
+
+  return {
+    shouldFail: true,
+  };
 }

@@ -95,7 +95,6 @@ export const program = (
     reportTscErrorsThatCouldBeIgnored(
       cliDependencies,
       tscErrorsThatCouldBeIgnored,
-      updatedLooselyTypeCheckedFilePaths,
     ),
     reportLooselyTypeCheckedFilePathsWithoutErrors(
       cliDependencies,
