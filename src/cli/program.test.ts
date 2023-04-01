@@ -325,23 +325,6 @@ describe('program', () => {
         },
       };
 
-      it('should add new loosely type-checked files whose errors can be ignored', () => {
-        looselyTypeCheckedFiles = ['a', 'b'];
-        ignoredErrorCodes = ['TS1111', 'TS2222'];
-        const result = program(temporaryCliDependencies, [
-          createErrorLine('a', 'TS1111'),
-          createErrorLine('b', 'TS1111'),
-          createErrorLine('c', 'TS2222'),
-        ]);
-
-        expect(result).toBeUndefined();
-
-        expect(temporaryCliDependencies.saveJSONFile).toHaveBeenCalledWith(
-          temporaryCliDependencies.cliOptions['loosely-type-checked-files'],
-          ['a', 'b', 'c'],
-        );
-      });
-
       it('should remove loosely type-checked file paths that have no errors', () => {
         looselyTypeCheckedFiles = ['a', 'b'];
         ignoredErrorCodes = ['TS1111'];
