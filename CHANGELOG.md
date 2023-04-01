@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v2.0.0 (2023-04-01)
+
 **BREAKING CHANGES**
 
 - `--auto-update` will no longer add new file paths to the registry
