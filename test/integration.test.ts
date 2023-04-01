@@ -48,7 +48,7 @@ const looseTsCheckCommand = `FORCE_COLOR=0 ${looseTsCheckBinaryPath}`;
 
 const tsVersions = process.env.ONLY_LATEST_VERSION
   ? ['latest']
-  : ['3.9', '4.0', '4.4', '4.9', 'latest'];
+  : ['3.9', '4.0', '4.4', '4.9', '5.0', 'latest'];
 
 async function prepareTestDirectory({
   tsVersion,

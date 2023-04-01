@@ -21,6 +21,10 @@
 
   See <https://github.com/Gelio/loose-ts-check/issues/16> for more information.
 
+Engineering:
+
+- Include TypeScript 5.0 in integration tests.
+
 ## v1.3.0 (2023-01-08)
 
 Features:
